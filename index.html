@@ -1,14 +1,14 @@
 <!doctype html><html data-theme="dark"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<meta property="og:title" content="Sevenfold" />
+<meta property="og:title" content="Mathillion" />
 <meta property="og:description" content="Seven numbers, sixty seconds each. Try for the most points, once per day." />
-<meta property="og:image" content="/sevenfold-og.png" />
-<meta property="og:url" content="/sevenfold-og.png" />
+<meta property="og:image" content="/mathillion-og.png" />
+<meta property="og:url" content="/mathillion-og.png" />
 <meta property="og:type" content="website" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:image" content="sevenfold-og.png" />
-<title>Sevenfold</title>
+<meta name="twitter:image" content="mathillion-og.png" />
+<title>Mathillion</title>
 <link href="https://fonts.googleapis.com/css2?family=Anta&display=swap" rel="stylesheet">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1140,7 +1140,7 @@ function rngFrom(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5)
 function utcDateString(ms) { return new Date(ms).toISOString().slice(0, 10); }
 function puzzleNumber(dateStr) { return Math.max(1, Math.round((Date.parse(dateStr + 'T00:00:00Z') - EPOCH) / 864e5) + 1); }
 function dailyTargets(dateStr) {
-  const r = rngFrom(hashStr('sevenfold:' + dateStr));
+  const r = rngFrom(hashStr('mathillion:' + dateStr));
   const ri = (a, b) => a + Math.floor(r() * (b - a + 1));
   const dec = (lo, hi, places) => { const k = Math.pow(10, places); return ri(Math.round(lo * k), Math.round(hi * k)) / k; };
   const makers = [
@@ -1273,7 +1273,7 @@ return { scoreExpression, evalOnly, newTables, analyzeTarget, findExamples, tier
   /* ---------- sound (synthesized, no files) ---------- */
   var SFX = (function () {
     var ctx = null, master = null, muted = false;
-    try { muted = localStorage.getItem('sevenfold:mute') === '1'; } catch (e) { /* ignore */ }
+    try { muted = localStorage.getItem('mathillion:mute') === '1'; } catch (e) { /* ignore */ }
     var PENTA = [1, 9 / 8, 5 / 4, 3 / 2, 5 / 3, 2, 9 / 4, 5 / 2, 3, 10 / 3, 4];
     function ensure() {
       if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return ctx; }
@@ -1294,7 +1294,7 @@ return { scoreExpression, evalOnly, newTables, analyzeTarget, findExamples, tier
     var api = {
       unlock: function () { ensure(); },
       isMuted: function () { return muted; },
-      setMuted: function (m) { muted = m; try { localStorage.setItem('sevenfold:mute', m ? '1' : '0'); } catch (e) { /* ignore */ } },
+      setMuted: function (m) { muted = m; try { localStorage.setItem('mathillion:mute', m ? '1' : '0'); } catch (e) { /* ignore */ } },
       tick: function (urgent) { tone(urgent ? 1500 : 1100, 0, 0.05, 'square', 0.1); },
       lock: function () { tone(660, 0, 0.09, 'triangle', 0.35); tone(990, 0.07, 0.16, 'triangle', 0.35); },
       miss: function () { tone(240, 0, 0.32, 'sawtooth', 0.16, 110); },
@@ -1392,8 +1392,8 @@ return { scoreExpression, evalOnly, newTables, analyzeTarget, findExamples, tier
       function rainbow(x0, x1) { var r = g.createLinearGradient(x0, 0, x1, 0); ['#ff5f6d', '#ffc371', '#47e891', '#4facfe', '#b06ab3'].forEach(function (c, i) { r.addColorStop(i / 4, c); }); return r; }
       function tcol(t, x0, x1) { return t === 7 ? rainbow(x0, x1) : CARD_TIER[t]; }
       g.textBaseline = 'alphabetic';
-      g.font = '800 66px ' + SANS; g.fillStyle = '#EDF0F5'; g.fillText('Seven', 72, 130);
-      var sw = g.measureText('Seven').width; g.fillStyle = '#8C99FF'; g.fillText('fold', 72 + sw, 130);
+      g.font = '800 66px ' + SANS; g.fillStyle = '#EDF0F5'; g.fillText('Math', 72, 130);
+      var sw = g.measureText('Math').width; g.fillStyle = '#8C99FF'; g.fillText('illion', 72 + sw, 130);
       g.font = '400 28px ' + MONO; g.fillStyle = '#9EA9B8'; g.textAlign = 'right'; g.fillText('#' + d.num, W - 72, 126); g.textAlign = 'left';
       g.font = '600 190px ' + MONO; g.fillStyle = '#EDF0F5'; g.fillText(String(d.total), 66, 360);
       var tw = g.measureText(String(d.total)).width; g.font = '400 34px ' + MONO; g.fillStyle = '#9EA9B8'; g.fillText('points', 82 + tw, 360);
@@ -1415,7 +1415,7 @@ return { scoreExpression, evalOnly, newTables, analyzeTarget, findExamples, tier
         g.font = '600 26px ' + MONO; g.fillStyle = r.ok ? (r.tier === 7 ? '#FFFFFF' : CARD_TIER[r.tier]) : '#5B6676'; g.fillText(r.ok ? TIERS[r.tier][0] : 'missed', 420, y + 40);
         g.font = '600 40px ' + MONO; g.fillStyle = r.ok ? '#EDF0F5' : '#5B6676'; g.textAlign = 'right'; g.fillText(String(r.pts), W - 72, y + 42); g.textAlign = 'left';
       });
-      g.font = '400 24px ' + MONO; g.fillStyle = '#6E7A8B'; g.fillText('sevenfold-game.github.io', 72, Hh - 56);
+      g.font = '400 24px ' + MONO; g.fillStyle = '#6E7A8B'; g.fillText('mathillion.github.io', 72, Hh - 56);
       // Build the preview URL independently of toBlob: some browsers return null
       // from toBlob (or do not implement it), which previously left sharing stuck.
       var url;
@@ -1919,7 +1919,7 @@ void main(){
   var date = C.utcDateString(Date.now());
   var targets = C.dailyTargets(date);
   var num = C.puzzleNumber(date);
-  var LS = 'sevenfold:v1:' + date, LSA = 'sevenfold:an:v2:' + date, LSE = 'sevenfold:ex:v2:' + date;
+  var LS = 'mathillion:v1:' + date, LSA = 'mathillion:an:v2:' + date, LSE = 'mathillion:ex:v2:' + date;
 
   function rd(k) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
   function wr(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage can be unavailable */ } }
@@ -2000,7 +2000,7 @@ void main(){
 
   /* ---------- shared pieces ---------- */
   function mast() {
-    return '<div class="mast"><div class="brand">Seven<b>fold</b></div><div class="right"><button class="mute" id="mute" type="button" aria-pressed="' + SFX.isMuted() + '">sound ' + (SFX.isMuted() ? 'off' : 'on') + '</button><div class="issue">#' + num + '</div></div></div>';
+    return '<div class="mast"><div class="brand">Math<b>illion</b></div><div class="right"><button class="mute" id="mute" type="button" aria-pressed="' + SFX.isMuted() + '">sound ' + (SFX.isMuted() ? 'off' : 'on') + '</button><div class="issue">#' + num + '</div></div></div>';
   }
   function pips() {
     var h = '<div class="pips" aria-hidden="true">';
@@ -2039,8 +2039,8 @@ void main(){
       '<p class="muted" style="margin:0">For each number, write a math expression that equals it within 0.001. The more complex your expression is, the more points it earns, and the higher the tier you get for it.</p>' +
       '<div class="card"><h2>Before you begin:</h2><ul class="plain">' +
       '<li><span>Redundant parts of the expression are simplified. <code>7+0</code>, <code>3+4-3</code> and <code>sin(2)^2+cos(2)^2</code> all simplify to <code>7</code>, <code>4</code> and <code>1</code> respectively, and so does any part that doesn\'t meaningfully contribute to the expression.</span></li>' +
-      '<li><span>Simple operations on numbers become one number, so <code>3+4</code> becomes <code>7</code>. Repeating the same operation or constant earns diminishing returns, while using different kinds of operations gives a small variety bonus.</span></li>' +
-      '<li><span>Factorial/function stacking is discounted, and multiplying several unrelated constants such as <code>pi*e*phi</code> gets a penalty. The goal is to reward a thoughtful expression, not just a pile of expensive symbols.</span></li>' +
+      '<li><span>Simple operations on numbers become one number, so <code>3+4</code> becomes <code>7</code>. Repeating the same operation or constant has diminishing returns, while using different kinds of operations gives you a small variety bonus.</span></li>' +
+      '<li><span>Stacking functions gives you less points, and cheesing the system like with <code>pi*e*phi</code> gets a penalty. Your expressions must have variety to earn points, not large numbers or nested functions.</span></li>' +
       '<li><span>Longer expressions and more complex operations can score higher. Be careful though! If your simplified expression has a decimal number with 2+ significant digits, you will get the "bro tried" tier.</span></li>' +
       '<li><span>Tiers depend on the number. Some numbers are easy to build complex expressions for and others are not, so the tier thresholds dynamically adjust themselves for every number.</span></li></ul></div>' +
       '<div class="card"><h2>Tiers</h2><div class="ladder">' + ladder + '</div></div>' +
@@ -2245,7 +2245,7 @@ void main(){
     var squares = Array.from(counts, function ([tier, count]) {
        return tier === -1 ? `⬛ no answer x${count}` : `${SQUARES[tier]} ${tiers[tier]} x${count}`;
     }).join('\n') + '\n';
-    var text = 'Sevenfold No. ' + num + '\n' + total + ' points' + (ov >= 0 ? ' - overall: ' + TIERS[ov][0] : '') + '\n' + squares + 'Can you beat my score?\nhttps://sevenfold-game.github.io';
+    var text = 'Mathillion #' + num + '\n' + total + ' points' + (ov >= 0 ? ' - overall: ' + TIERS[ov][0] : '') + '\n' + squares + 'Can you beat my score?\nhttps://mathillion.github.io';
     app.innerHTML = mast() + pips() +
       '<div class="card"><h2>Today\'s score</h2><div class="pts"><span id="tot">' + (fresh ? 0 : total) + '</span><small>points</small></div>' +
       '<div class="overall"><div class="lab">Overall tier</div><div id="ovslot">' + (fresh ? '' : (ov >= 0 ? tierPill(ov, true) : '')) + '</div>' +
@@ -2299,7 +2299,7 @@ void main(){
         '<div class="small muted" id="imsg">' + (DL ? '' : 'Press and hold or right-click to save this.') + '</div></div></div>';
       var msg = function (t) { var m = document.getElementById('imsg'); if (m) m.textContent = t; };
       var sv = document.getElementById('savei');
-      if (sv) sv.onclick = function () { DL.save({ filename: 'sevenfold-' + num + '.png', data: out.blob }).then(function () { msg('Saved.'); }, function (err) { msg(err && err.code === 'declined' ? 'Save cancelled.' : 'Saving is unavailable. Press and hold to save this instead.'); }); };
+      if (sv) sv.onclick = function () { DL.save({ filename: 'mathillion-' + num + '.png', data: out.blob }).then(function () { msg('Saved.'); }, function (err) { msg(err && err.code === 'declined' ? 'Save cancelled.' : 'Saving is unavailable. Press and hold to save this instead.'); }); };
       var cp = document.getElementById('copyi');
       if (cp) cp.onclick = function () { navigator.clipboard.write([new ClipboardItem({ 'image/png': out.blob })]).then(function () { msg('Image copied.'); }, function () { msg('Copying is unavailable. Press and hold to save this instead.'); }); };
     }).catch(function (err) {
