@@ -8,6 +8,7 @@
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:image" content="mathillion-og.png" />
+<meta name="google-site-verification" content="BWm1J50l9kKjTqZ5z1F74_V29W6lzuSk2_LNsNPiN3s" />
 <title>Mathillion</title>
 <link href="https://fonts.googleapis.com/css2?family=Anta&display=swap" rel="stylesheet">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1213,7 +1214,7 @@ function findExamples(T, thr, ms) {
   };
   consider(String(T));
   const t0 = Date.now(); let n = 0;
-  while (Date.now() - t0 < (ms || 2500) && n < 6000 && found.some((x) => !x)) {
+  while (Date.now() - t0 < (ms || 2500) && n < 60000 && found.some((x) => !x)) {
     n++;
     const empty = []; found.forEach((x, i) => { if (!x) empty.push(i); });
     const tier = empty[Math.floor(rng() * empty.length)];
@@ -1224,7 +1225,6 @@ function findExamples(T, thr, ms) {
   }
   return found;
 }
-
 
 function evalOnly(src) {
   try { return { ok: true, value: ev(parse(src)) }; }
@@ -2163,7 +2163,7 @@ void main(){
         (r.pruned ? '<div class="small muted" style="margin-top:6px">Redundant parts of the expression were removed.</div>' : '') +
         (r.simplified === false ? '<div class="small muted" style="margin-top:6px">Nice! Every part of this expression contributed meaningfully.</div>' : '') + '</dd></dl>';
     } else {
-      var why = r.reason === 'skip' ? 'Skipped this one.' : (r.input ? (r.miss !== undefined ? 'Time ran out sadly. The expression became ' + esc(fmtV(r.miss)) + '.' : 'Time ran out without a valid expression.') : 'Time ran out with nothing submitted.');
+      var why = r.reason === 'skip' ? 'Skipped this one.' : (r.input ? (r.miss !== undefined ? 'Time ran out sadly. The expression evaluated to ' + esc(fmtV(r.miss)) + '.' : 'Time ran out without a valid expression.') : 'Time ran out with nothing submitted.');
       body = '<div class="pts fade-in">0<small>points</small></div><p class="muted fade-in" style="margin:0">' + why + '</p>';
     }
     app.innerHTML = mast() + pips() +
