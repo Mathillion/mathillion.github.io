@@ -56,7 +56,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 /* masthead */
 .mast { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.brand { font-weight: 800; font-size: 26px; letter-spacing: -0.02em; line-height: 1; }
+.brand { font-weight: 800; font-size: 26px; letter-spacing: -0.02em; line-height: 1; cursor: pointer; }
 .brand b { color: var(--accent); font-weight: 800; }
 .issue { font-family: var(--f-mono); font-size: 12px; color: var(--ink-2); letter-spacing: .04em; text-transform: uppercase; }
 .pips { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
@@ -2001,7 +2001,7 @@ void main(){
 
   /* ---------- shared pieces ---------- */
   function mast() {
-    return '<div class="mast"><div class="brand">Math<b>illion</b></div><div class="right"><button class="mute" id="mute" type="button" aria-pressed="' + SFX.isMuted() + '">sound ' + (SFX.isMuted() ? 'off' : 'on') + '</button><div class="issue">#' + num + '</div></div></div>';
+    return '<div class="mast"><div class="brand" onclick="window.location.href = 'https:\/\/mathillion.github.io/exprdle'">Math<b>illion</b></div><div class="right"><button class="mute" id="mute" type="button" aria-pressed="' + SFX.isMuted() + '">sound ' + (SFX.isMuted() ? 'off' : 'on') + '</button><div class="issue">#' + num + '</div></div></div>';
   }
   function pips() {
     var h = '<div class="pips" aria-hidden="true">';
