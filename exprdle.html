@@ -1,0 +1,1166 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Exprdle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Intel+One+Mono:wght@300..700&family=Kanit:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+/* Layout: one left-aligned column like a lab notebook page. The target numeral is the hero,
+   a thin timer rule sits under it, and a rarity ruler appears when a round is scored. */
+:root {
+  --bg: #F2F4F8; --surface: #FFFFFF; --ink: #11151B; --ink-2: #505A69; --line: #D6DBE4; --line-2: #E6EAF0;
+  --accent: #2B3BD6; --accent-ink: #FFFFFF; --good: #17804A; --bad: #C23B2A; --warn: #B7620B;
+  --t0: #7B8696; --t1: #2F9E5F; --t2: #2D78E0; --t3: #7A55E0; --t4: #D69A00; --t5: #E15344; --t6: #02A272; --t7: #12161C; --t8: #8A5A2E;
+  --tint: 14%;
+  --f-display: 'Kanit', 'Segoe UI', system-ui, sans-serif;
+  --f-mono: 'Intel One Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --shadow: 0 1px 0 rgba(17, 21, 27, .04), 0 8px 24px -12px rgba(17, 21, 27, .18);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1217; --surface: #161B22; --ink: #EDF0F5; --ink-2: #9EA9B8; --line: #2A323D; --line-2: #212832;
+    --accent: #8C99FF; --accent-ink: #0E1217; --good: #4CC083; --bad: #FF7B68; --warn: #F0A24A;
+    --t0: #9AA5B5; --t1: #4CC083; --t2: #5E9BFF; --t3: #9E80FF; --t4: #F0BE3A; --t5: #FF7D6B; --t6: #05E9A5; --t7: #EDF0F5; --t8: #C9915A;
+    --tint: 22%; --shadow: 0 1px 0 rgba(0,0,0,.3), 0 10px 28px -14px rgba(0,0,0,.7);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1217; --surface: #161B22; --ink: #EDF0F5; --ink-2: #9EA9B8; --line: #2A323D; --line-2: #212832;
+  --accent: #8C99FF; --accent-ink: #0E1217; --good: #4CC083; --bad: #FF7B68; --warn: #F0A24A;
+  --t0: #9AA5B5; --t1: #4CC083; --t2: #5E9BFF; --t3: #9E80FF; --t4: #F0BE3A; --t5: #FF7D6B; --t6: #FF6B9E; --t7: #EDF0F5; --t8: #C9915A;
+  --tint: 22%; --shadow: 0 1px 0 rgba(0,0,0,.3), 0 10px 28px -14px rgba(0,0,0,.7);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-display); font-size: 16px; line-height: 1.5;
+  padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+/* masthead */
+.mast { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { font-weight: 800; font-size: 26px; letter-spacing: -0.02em; line-height: 1; cursor: pointer; }
+.brand b { color: var(--accent); font-weight: 800; }
+.issue { font-family: var(--f-mono); font-size: 12px; color: var(--ink-2); letter-spacing: .04em; text-transform: uppercase; }
+.pips { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.pip { height: 6px; border-radius: 3px; background: var(--line); }
+.pip.done { background: var(--ink); }
+.pip.now { background: var(--accent); }
+
+/* generic blocks */
+.lede { font-size: clamp(26px, 6.4vw, 38px); font-weight: 800; letter-spacing: -0.025em; line-height: 1.08; text-wrap: balance; margin: 0; }
+.muted { color: var(--ink-2); }
+.small { font-size: 13px; }
+h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); font-weight: 600; margin: 0 0 10px; }
+ul.plain { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+ul.plain li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; }
+ul.plain li::before { content: ""; width: 8px; height: 8px; margin-top: 8px; border-radius: 2px; background: var(--accent); }
+.btn { border: 0; border-radius: 12px; padding: 14px 20px; font-weight: 600; font-size: 17px; background: var(--accent); color: var(--accent-ink); }
+.btn:hover { filter: brightness(1.06); }
+.btn:active { transform: translateY(1px); }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.btn.sm { padding: 9px 14px; font-size: 14px; border-radius: 10px; }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+details { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--surface); }
+details summary { cursor: pointer; font-weight: 600; }
+details[open] summary { margin-bottom: 10px; }
+details p { margin: 6px 0; }
+code, .code { font-family: var(--f-mono); font-size: 13px; background: var(--line-2); padding: 1px 6px; border-radius: 5px; }
+
+/* tiers */
+.tier { --c: var(--t0); display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 3px 11px 3px 9px;
+  font-family: var(--f-mono); font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--c);
+  background: color-mix(in srgb, var(--c) var(--tint), transparent); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); white-space: nowrap; }
+.tier::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.tier[data-t="0"] { --c: var(--t0); } .tier[data-t="1"] { --c: var(--t1); } .tier[data-t="2"] { --c: var(--t2); } .tier[data-t="3"] { --c: var(--t3); }
+.tier[data-t="4"] { --c: var(--t4); } .tier[data-t="5"] { --c: var(--t5); } .tier[data-t="6"] { --c: var(--t6); } .tier[data-t="7"] { --c: var(--t7); } .tier[data-t="8"] { --c: var(--t8); }
+.tier[data-t="7"]::before { background: conic-gradient(from 0deg, #ff5f6d, #ffc371, #47e891, #4facfe, #b06ab3, #ff5f6d); }
+.tier.big { font-size: 15px; padding: 5px 14px 5px 11px; }
+.tier.big::before { width: 10px; height: 10px; }
+.ladder { display: flex; flex-direction: column; }
+.ladder .tr { display: grid; grid-template-columns: 124px 1fr; gap: 12px; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--line-2); }
+.ladder .tr:first-child { border-top: 0; }
+
+/* play */
+.stage { display: flex; flex-direction: column; gap: 14px; }
+.target-label { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); display: flex; justify-content: space-between; gap: 8px; }
+.target { font-family: var(--f-mono); font-weight: 600; font-size: clamp(54px, 17vw, 104px); line-height: 1; letter-spacing: -0.04em; overflow-wrap: anywhere; }
+.clock { display: flex; align-items: center; gap: 12px; }
+.track { flex: 1; height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.fill { height: 100%; width: 100%; background: var(--accent); transform-origin: left; border-radius: 4px; }
+.clock.low .fill { background: var(--bad); }
+.secs { font-family: var(--f-mono); font-weight: 600; font-size: 22px; min-width: 3.2ch; text-align: right; }
+.clock.low .secs { color: var(--bad); }
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field input { width: 100%; font-family: var(--f-mono); font-size: 22px; padding: 14px 16px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); color: var(--ink); }
+.field input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent); }
+.field.shake input { animation: shake .32s; border-color: var(--bad); }
+@keyframes shake { 20% { transform: translateX(-6px); } 50% { transform: translateX(6px); } 80% { transform: translateX(-3px); } }
+.live { min-height: 44px; font-family: var(--f-mono); font-size: 14px; display: flex; flex-direction: column; gap: 2px; }
+.live .ok { color: var(--good); } .live .off { color: var(--warn); } .live .err { color: var(--bad); }
+.keys { display: flex; flex-wrap: wrap; gap: 6px; }
+.keys button { font-family: var(--f-mono); font-size: 15px; min-width: 44px; min-height: 40px; padding: 4px 10px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); }
+.keys button:hover { border-color: var(--accent); }
+
+/* reveal */
+.pts { font-family: var(--f-mono); font-weight: 600; font-size: clamp(44px, 13vw, 72px); line-height: 1; letter-spacing: -0.03em; }
+.pts small { font-size: 16px; letter-spacing: 0; color: var(--ink-2); font-weight: 400; margin-left: 6px; }
+.expr { font-family: var(--f-mono); font-size: 17px; overflow-wrap: anywhere; padding: 10px 12px; border-radius: 10px; background: var(--line-2); }
+.kv { display: grid; grid-template-columns: 96px 1fr; gap: 6px 12px; align-items: baseline; }
+.kv dt { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); font-family: var(--f-mono); }
+.kv dd { margin: 0; min-width: 0; }
+.ruler { position: relative; padding-top: 30px; }
+.ruler .bar { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; height: 14px; }
+.ruler .bar i { border-radius: 3px; background: color-mix(in srgb, var(--c) 55%, var(--bg)); }
+.ruler .bar i:nth-child(1) { --c: var(--t0); } .ruler .bar i:nth-child(2) { --c: var(--t1); } .ruler .bar i:nth-child(3) { --c: var(--t2); } .ruler .bar i:nth-child(4) { --c: var(--t3); }
+.ruler .bar i:nth-child(5) { --c: var(--t4); } .ruler .bar i:nth-child(6) { --c: var(--t5); } .ruler .bar i:nth-child(7) { --c: var(--t6); }
+.ruler .bar i:nth-child(8) { background: conic-gradient(from 90deg at 50% 50%, #ff5f6d, #ffc371, #47e891, #4facfe, #b06ab3, #ff5f6d); }
+.ruler .mark { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; font-family: var(--f-mono); font-size: 11px; font-weight: 600; }
+.ruler .mark::after { content: ""; width: 0; height: 0; border: 6px solid transparent; border-top-color: var(--ink); margin-top: 1px; }
+.ruler .ticks { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; margin-top: 6px; font-family: var(--f-mono); font-size: 10px; color: var(--ink-2); }
+.ruler .ticks span { overflow: hidden; text-overflow: clip; white-space: nowrap; }
+.pending { color: var(--ink-2); font-family: var(--f-mono); font-size: 13px; animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .45; } }
+
+/* results */
+.total { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.rows { display: flex; flex-direction: column; }
+.res { display: grid; grid-template-columns: 56px 1fr auto; gap: 4px 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line-2); }
+.res:first-child { border-top: 0; }
+.res .n { font-family: var(--f-mono); font-weight: 600; font-size: 18px; }
+.res .e { min-width: 0; font-family: var(--f-mono); font-size: 13px; color: var(--ink-2); overflow-wrap: anywhere; }
+.res .p { font-family: var(--f-mono); font-weight: 600; text-align: right; }
+.res .tcell { grid-column: 2 / 4; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.foot { font-size: 12px; color: var(--ink-2); font-family: var(--f-mono); }
+/* sound toggle, reveal motion, overall tier, share, examples */
+.mast .right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.mute { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 11px; font-family: var(--f-mono); font-size: 12px; color: var(--ink-2); }
+.mute:hover { border-color: var(--accent); color: var(--ink); }
+.ruler .bar i { opacity: .38; transition: opacity .25s ease; }
+.ruler .bar i.lit { opacity: 1; }
+.tier.pop { animation: pop .55s cubic-bezier(.2, 1.6, .4, 1) both; }
+@keyframes pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.fade-in { animation: fadeUp .5s ease both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.stag > * { animation: fadeUp .45s ease both; }
+.stag > *:nth-child(1) { animation-delay: .05s; } .stag > *:nth-child(2) { animation-delay: .12s; } .stag > *:nth-child(3) { animation-delay: .19s; }
+.stag > *:nth-child(4) { animation-delay: .26s; } .stag > *:nth-child(5) { animation-delay: .33s; } .stag > *:nth-child(6) { animation-delay: .4s; } .stag > *:nth-child(7) { animation-delay: .47s; }
+.overall { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; margin-top: 14px; }
+.overall .lab { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+#ovslot { min-height: 34px; }
+.sharepanel { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; margin-top: 16px; }
+.share-img { width: 100%; max-width: 300px; border-radius: 12px; border: 1px solid var(--line); display: block; }
+.stack { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; min-width: 0; flex: 1; }
+.exlist { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.exlist details { padding: 10px 12px; }
+.exlist summary { display: flex; align-items: center; gap: 12px; font-weight: 600; }
+.exlist details[open] summary { margin-bottom: 8px; }
+.exrow { display: grid; grid-template-columns: 112px 44px minmax(0, 1fr); gap: 6px 10px; align-items: baseline; padding: 8px 6px; border-top: 1px solid var(--line-2); }
+.exrow.mine { background: color-mix(in srgb, var(--accent) 12%, transparent); border-radius: 8px; border-top-color: transparent; }
+.exrow .xe { font-family: var(--f-mono); font-size: 13px; overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: reduce) { .field.shake input, .pending, .tier.pop, .fade-in, .stag > * { animation: none; } .btn:active { transform: none; } .ruler .bar i { transition: none; } }
+.chip{display:inline-flex;align-items:center;gap:8px;margin:0;font-size:13px;line-height:1.3;white-space:nowrap}
+.chip b{font-weight:600}.chip i{font-style:normal;font-family:var(--f-mono);color:var(--ink-2);font-size:11px}.chip em{font-style:normal;font-family:var(--f-mono);font-weight:600;font-size:12px}
+.feed{display:flex;flex-wrap:wrap;gap:8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;align-self:flex-start}
+.seg button{border:0;background:transparent;padding:9px 18px;font-weight:600}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
+.bigexpr{font-family:var(--f-mono);font-size:clamp(22px,6vw,40px);font-weight:600;line-height:1.5;min-height:40px;overflow-wrap:anywhere;letter-spacing:-.02em}
+.tk{display:inline-block;animation:pop .45s cubic-bezier(.2,1.6,.4,1) both}.tk.op{color:var(--accent)}
+.cal{font-weight:800}.bigexpr sup,.bigexpr sub{font-size:.55em}
+.shake{animation:shk var(--shd,300ms) linear}@keyframes shk{0%,100%{transform:none}15%{transform:translate(calc(var(--sh)*-1),calc(var(--sh)*.6))}30%{transform:translate(var(--sh),calc(var(--sh)*-.8))}45%{transform:translate(calc(var(--sh)*-.8),calc(var(--sh)*-.5))}60%{transform:translate(calc(var(--sh)*.7),var(--sh))}80%{transform:translate(calc(var(--sh)*-.3),calc(var(--sh)*.3))}}
+.big{font-family:var(--f-mono);font-size:clamp(26px,7vw,44px)}
+.maglab{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+#mag{font-family:var(--f-mono);font-weight:600;font-size:clamp(44px,13vw,72px);line-height:1;letter-spacing:-.03em}
+.chip.tier{padding:5px 12px 5px 10px}
+.line{display:grid;grid-template-columns:90px 1fr;gap:6px 12px;align-items:baseline;padding:6px 0}.line dt{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-family:var(--f-mono)}
+.line dd{margin:0;font-family:var(--f-mono);overflow-wrap:anywhere}
+</style></head><body><div class="wrap" id="app">
+<header class="mast"><div class="brand" onclick="window.location.href = 'https://mathillion.github.io'">Expr<b>dle</b></div><div class="right"><select id="spd" class="mute" aria-label="Animation speed"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select><button id="snd" class="mute"></button></div></header>
+<div class="seg" role="tablist"><button data-m="daily" class="on">Daily</button><button data-m="unl">Unlimited</button></div>
+<div class="issue" id="issue"></div>
+<section class="card"><div class="bigexpr" id="expr" aria-live="polite"><span class="muted">Go ahead, click Roll!</span></div>
+<div class="row" style="margin-top:12px"><button class="btn" id="roll">Roll</button><button class="btn ghost sm" id="skip" hidden>Skip</button></div></section>
+<section class="card"><div class="maglab">Mag</div><div id="mag">0</div><div class="overall" id="tot"></div><div class="foot" id="stats" style="margin-top:8px"></div></section>
+<section class="card" id="res" hidden><dl class="line" style="margin:0"><dt>Rolled</dt><dd id="orig"></dd><dt>Simplified</dt><dd id="simp"></dd><dt>Answer</dt><dd id="ans"></dd></dl></section>
+<div class="feed" id="feed"></div>
+<div class="row" id="after" hidden><button class="btn sm" id="copy">Copy result</button></div>
+<details><summary>Before you begin</summary><div class="small muted" style="padding-top:8px;line-height:1.6">Each expression has a minimum of 2 numbers separated by an operator, with a 1 in 4 chance to keep adding a number and an operator. This repeats until it fails. Additionally, each number has a 1 in 7 chance to become negative. Each number also has a 1 in 7 chance to gain a decimal digit, with each extra decimal digit being another 1 in 3 (also repeats until fail). Basic operators are more common, while more complicated operators are much rarer. + − × ÷ ^ are common, sin/cos/tan are rare, ∫ and d/dx are the rarest of them all. Calculus terms are evaluated exactly, and it even uses the same simplifier and evaluator as Mathillion! Pretty cool, right? There are currently <b id="nbad"></b> badges, and each one is worth <b>100 / p</b> Mag, which for now <b>p</b> is based on the simulation of a few thousand rolls, all calculated before you even hit the Roll button.</div></details>
+</div>
+<script>
+function makeCore(){
+// ===== Part A: rationals, AST, parser, evaluator =====
+function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { const t = a % b; a = b; b = t; } return a; }
+class Overflow extends Error {}
+class InputError extends Error {}
+
+const N = (n, d = 1) => {
+  if (d < 0) { n = -n; d = -d; }
+  const g = gcd(n, d) || 1; n /= g; d /= g;
+  if (!Number.isSafeInteger(n) || !Number.isSafeInteger(d)) throw new Overflow();
+  return { t: 'n', n, d };
+};
+const C = (name) => ({ t: 'c', name });
+const ADD = (args) => ({ t: 'add', args });
+const MUL = (args) => ({ t: 'mul', args });
+const POW = (b, e) => ({ t: 'pow', b, e });
+const FN = (name, args) => ({ t: 'fn', name, args });
+const isNum = (x) => x.t === 'n';
+const nval = (x) => x.n / x.d;
+const radd = (a, b) => N(a.n * b.d + b.n * a.d, a.d * b.d);
+const rmul = (a, b) => N(a.n * b.n, a.d * b.d);
+const isInt = (x) => isNum(x) && x.d === 1;
+const isNumV = (x, v) => isNum(x) && x.n === v && x.d === 1;
+
+const CONSTS = { pi: Math.PI, e: Math.E, phi: (1 + Math.sqrt(5)) / 2, tau: 2 * Math.PI };
+
+function factorial(n) {
+  if (!Number.isInteger(n) || n < 0 || n > 170) throw new InputError('Factorial needs a whole number from 0 to 170');
+  let r = 1; for (let i = 2; i <= n; i++) r *= i; return r;
+}
+// name -> [arity, impl]
+const FUNCS = {
+  sqrt: [1, null], exp: [1, null], root: [2, null], // sugar, handled by the parser
+  cbrt: [1, Math.cbrt], abs: [1, Math.abs],
+  sin: [1, Math.sin], cos: [1, Math.cos], tan: [1, Math.tan],
+  asin: [1, Math.asin], acos: [1, Math.acos], atan: [1, Math.atan],
+  sinh: [1, Math.sinh], cosh: [1, Math.cosh], tanh: [1, Math.tanh],
+  ln: [1, Math.log], log: [1, Math.log10], log2: [1, Math.log2],
+  logb: [2, (b, x) => Math.log(x) / Math.log(b)],
+  floor: [1, Math.floor], ceil: [1, Math.ceil], round: [1, (x) => Math.floor(x + 0.5)],
+  fact: [1, factorial],
+  mod: [2, (a, b) => a - b * Math.floor(a / b)],
+};
+
+// ---------- tokenizer ----------
+function splitIdent(id) {
+  // "epi" -> ["e","pi"]; null when it is not made only of constants
+  const names = ['phi', 'tau', 'pi', 'e'];
+  const go = (s) => {
+    if (!s) return [];
+    for (const n of names) if (s.startsWith(n)) { const r = go(s.slice(n.length)); if (r) return [n, ...r]; }
+    return null;
+  };
+  return go(id);
+}
+function tokenize(src) {
+  const s = src.toLowerCase()
+    .replace(/×|·|⋅/g, '*').replace(/÷/g, '/').replace(/[−–—]/g, '-')
+    .replace(/π/g, 'pi').replace(/φ/g, 'phi').replace(/τ/g, 'tau')
+    .replace(/√/g, 'sqrt').replace(/²/g, '^2').replace(/³/g, '^3')
+    .replace(/\*\*/g, '^');
+  const out = []; let i = 0;
+  while (i < s.length) {
+    const ch = s[i];
+    if (/\s/.test(ch)) { i++; continue; }
+    let m;
+    if ((m = /^(\d+\.?\d*|\.\d+)/.exec(s.slice(i)))) { out.push({ k: 'num', v: m[1] }); i += m[1].length; continue; }
+    if ((m = /^[a-z]+/.exec(s.slice(i)))) {
+      let id = m[0];
+      if ((id === 'log' && /^2\s*\(/.test(s.slice(i + 3)))) { id = 'log2'; i += 1; }
+      i += m[0].length;
+      if (id === 'log2') { i += 0; }
+      if (FUNCS[id] || id in CONSTS) { out.push({ k: 'id', v: id }); continue; }
+      const parts = splitIdent(id);
+      if (!parts) throw new InputError(`Unknown name "${m[0]}"`);
+      parts.forEach((p, j) => { if (j) out.push({ k: 'op', v: '*' }); out.push({ k: 'id', v: p }); });
+      continue;
+    }
+    if ('+-*/^(),!%'.includes(ch)) { out.push({ k: 'op', v: ch }); i++; continue; }
+    throw new InputError(`Unexpected "${ch}"`);
+  }
+  return out;
+}
+
+// ---------- parser ----------
+function decimalToN(str) {
+  const [ip, fp = ''] = str.split('.');
+  if (fp.length > 9) throw new InputError('Too many decimal places (9 max)');
+  return N(Number(ip + fp), Math.pow(10, fp.length));
+}
+function parse(src) {
+  if (src.length > 240) throw new InputError('Expression is too long (240 characters max)');
+  const toks = tokenize(src);
+  if (!toks.length) throw new InputError('Type an expression');
+  let p = 0, depth = 0;
+  const peek = () => toks[p];
+  const isOp = (v) => peek() && peek().k === 'op' && peek().v === v;
+  const startsPrimary = () => {
+    const t = peek(); if (!t) return false;
+    return t.k === 'num' || t.k === 'id' || (t.k === 'op' && t.v === '(');
+  };
+  function expect(v) { if (!isOp(v)) throw new InputError(`Expected "${v}"`); p++; }
+  function expr() {
+    let left = term();
+    while (isOp('+') || isOp('-')) {
+      const op = toks[p++].v; const r = term();
+      left = ADD([left, op === '+' ? r : MUL([N(-1), r])]);
+    }
+    return left;
+  }
+  function term() {
+    let left = unary();
+    for (;;) {
+      if (isOp('*')) { p++; left = MUL([left, unary()]); }
+      else if (isOp('/')) { p++; left = MUL([left, POW(unary(), N(-1))]); }
+      else if (isOp('%')) { p++; left = FN('mod', [left, unary()]); }
+      else if (startsPrimary()) left = MUL([left, unary()]); // implicit multiplication
+      else return left;
+    }
+  }
+  function unary() {
+    if (isOp('-')) { p++; return MUL([N(-1), unary()]); }
+    if (isOp('+')) { p++; return unary(); }
+    return power();
+  }
+  function power() {
+    const base = postfix();
+    if (isOp('^')) { p++; return POW(base, unary()); }
+    return base;
+  }
+  function postfix() {
+    let x = primary();
+    while (isOp('!')) { p++; x = FN('fact', [x]); }
+    return x;
+  }
+  function primary() {
+    if (++depth > 60) throw new InputError('Expression is nested too deeply');
+    const t = toks[p++];
+    let r;
+    if (!t) throw new InputError('Expression ends too early');
+    if (t.k === 'num') r = decimalToN(t.v);
+    else if (t.k === 'id') {
+      if (t.v in CONSTS) r = C(t.v);
+      else {
+        const [ar] = FUNCS[t.v];
+        expect('(');
+        const args = [expr()];
+        while (isOp(',')) { p++; args.push(expr()); }
+        expect(')');
+        if (args.length !== ar) throw new InputError(`${t.v} takes ${ar} argument${ar > 1 ? 's' : ''}`);
+        if (t.v === 'sqrt') r = POW(args[0], N(1, 2));
+        else if (t.v === 'exp') r = POW(C('e'), args[0]);
+        else if (t.v === 'root') r = POW(args[1], MUL([N(1), POW(args[0], N(-1))]));
+        else r = FN(t.v, args);
+      }
+    } else if (t.k === 'op' && t.v === '(') { r = expr(); expect(')'); }
+    else throw new InputError(`Unexpected "${t.v}"`);
+    depth--;
+    return r;
+  }
+  const tree = expr();
+  if (p < toks.length) throw new InputError(`Unexpected "${toks[p].v}"`);
+  return tree;
+}
+
+// ---------- evaluator ----------
+const LIM = 1e100;
+function ev(x) {
+  let r;
+  switch (x.t) {
+    case 'n': return x.n / x.d;
+    case 'c': return CONSTS[x.name];
+    case 'add': r = 0; for (const a of x.args) r += ev(a); break;
+    case 'mul': r = 1; for (const a of x.args) r *= ev(a); break;
+    case 'pow': {
+      const b = ev(x.b), e = ev(x.e);
+      if (b === 0 && e <= 0) throw new InputError('Division by zero');
+      if (b < 0 && !Number.isInteger(e)) throw new InputError('Even roots and fractional powers of negatives are not real');
+      r = Math.pow(b, e); break;
+    }
+    case 'fn': {
+      const args = x.args.map(ev);
+      if (x.name === 'ln' && args[0] <= 0) throw new InputError('ln needs a positive number');
+      if ((x.name === 'log' || x.name === 'log2') && args[0] <= 0) throw new InputError('log needs a positive number');
+      if (x.name === 'logb' && (args[0] <= 0 || args[0] === 1 || args[1] <= 0)) throw new InputError('Invalid logarithm base or argument');
+      if (x.name === 'mod' && args[1] === 0) throw new InputError('Division by zero');
+      r = FUNCS[x.name][1](...args); break;
+    }
+    default: throw new Error('bad node');
+  }
+  if (!Number.isFinite(r) || Math.abs(r) > LIM) throw new InputError('That value is undefined or too large');
+  return r;
+}
+
+// ===== Part B: simplifier, printer, cost =====
+function key(x) {
+  if (x._k) return x._k;
+  let k;
+  switch (x.t) {
+    case 'n': k = x.d === 1 ? '' + x.n : x.n + '/' + x.d; break;
+    case 'c': k = x.name; break;
+    case 'add': k = '+(' + x.args.map(key).join(',') + ')'; break;
+    case 'mul': k = '*(' + x.args.map(key).join(',') + ')'; break;
+    case 'pow': k = '^(' + key(x.b) + ',' + key(x.e) + ')'; break;
+    default: k = x.name + '(' + x.args.map(key).join(',') + ')';
+  }
+  Object.defineProperty(x, '_k', { value: k, enumerable: false });
+  return k;
+}
+const byKey = (a, b) => (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0);
+const neg1 = N(-1);
+const isPi = (x) => x.t === 'c' && x.name === 'pi';
+
+function ratPow(b, k) { // rational base, integer exponent (any sign)
+  const m = Math.abs(k);
+  let n = Math.pow(b.n, m), d = Math.pow(b.d, m);
+  return k < 0 ? N(d, n) : N(n, d);
+}
+function rootFold(b, e) { // exact rational result of b^e for e=p/q, else null
+  if (b.n <= 0) return null;
+  const rn = Math.round(Math.pow(b.n, 1 / e.d)), rd = Math.round(Math.pow(b.d, 1 / e.d));
+  if (Math.pow(rn, e.d) !== b.n || Math.pow(rd, e.d) !== b.d) return null;
+  return ratPow(N(rn, rd), e.n);
+}
+
+const fixNeg = (x) => (x.t === 'pow' && isNum(x.b) && x.b.n !== 0 && isInt(x.e) && x.e.n < 0 ? ratPow(x.b, x.e.n) : x);
+function safeEv(x) { try { return ev(x); } catch (err) { return NaN; } }
+function sPow(b, e) {
+  b = fixNeg(b); e = fixNeg(e);
+  if (b.t === 'fn' && b.name === 'sqrt' && isNumV(e, 2)) return b.args[0];
+  if (b.t === 'fn' && b.name === 'cbrt' && isNumV(e, 3)) return b.args[0];
+  if (b.t === 'pow' && !(isNum(e) && isNumV(e, 1)) && (isInt(e) || safeEv(b.b) > 0)) return sPow(b.b, sMul([b.e, e]));
+  if (b.t === 'pow' && isNumV(e, 1) === false && isNum(e) && e.n === 1 && e.d === 2 && isNum(b.e) && b.e.d === 1 && b.e.n % 2 === 0 && safeEv(b.b) < 0) return sPow(FN('abs', [b.b]), N(b.e.n / 2));
+  if (isNum(e)) {
+    if (e.n === 0) return N(1);
+    if (isNumV(e, 1)) return b;
+    if (isNum(b)) {
+      if (b.n === 0) return N(0);
+      if (isNumV(b, 1)) return N(1);
+      if (e.d === 1) return POW(b, e);
+      const f = rootFold(b, e); if (f) return f;
+    }
+  }
+  if (isNumV(b, 1)) return N(1);
+  if (b.t === 'c' && b.name === 'e' && e.t === 'fn' && e.name === 'ln') return e.args[0];
+  if (b.t === 'n' && b.n === 10 && b.d === 1 && e.t === 'fn' && e.name === 'log') return e.args[0];
+  if (b.t === 'n' && b.n === 2 && b.d === 1 && e.t === 'fn' && e.name === 'log2') return e.args[0];
+  return POW(b, e);
+}
+
+function sMul(args) {
+  let coef = N(1); const flat = [];
+  const push = (a) => { if (a.t === 'mul') a.args.forEach(push); else if (isNum(a)) coef = rmul(coef, a); else flat.push(a); };
+  args.forEach(push);
+  if (coef.n === 0) return N(0);
+  const groups = new Map();
+  for (const f of flat) {
+    const base = f.t === 'pow' ? f.b : f, ex = f.t === 'pow' ? f.e : N(1);
+    const k = key(base);
+    if (!groups.has(k)) groups.set(k, { base, exps: [] });
+    groups.get(k).exps.push(ex);
+  }
+  const out = []; let again = false;
+  for (const { base, exps } of groups.values()) {
+    const f = exps.length === 1 ? (exps[0] && isNumV(exps[0], 1) ? base : sPow(base, exps[0])) : sPow(base, sAdd(exps));
+    const g = fixNeg(f);
+    if (isNum(g) || g.t === 'mul') again = true;
+    out.push(g);
+  }
+  if (again) return sMul([coef, ...out]);
+  out.sort(byKey);
+  if (!out.length) return coef;
+  if (isNumV(coef, 1) && out.length === 1) return out[0];
+  return MUL(isNumV(coef, 1) ? out : [coef, ...out]);
+}
+
+function splitTerm(t) {
+  if (isNum(t)) return [t, []];
+  if (t.t === 'mul' && isNum(t.args[0])) return [t.args[0], t.args.slice(1)];
+  return [N(1), [t]];
+}
+function splitMul(x) { return isNum(x.args[0]) ? [x.args[0], x.args.slice(1)] : [N(1), x.args]; }
+function rebuild(coef, rest) {
+  if (!rest.length) return coef;
+  if (isNumV(coef, 1)) return rest.length === 1 ? rest[0] : MUL(rest);
+  return MUL([coef, ...rest]);
+}
+function sAdd(args) {
+  const terms = [];
+  const push = (a) => {
+    a = fixNeg(a);
+    if (a.t === 'add') a.args.forEach(push);
+    else if (a.t === 'mul' && a.args.length === 2 && isNumV(a.args[0], -1) && a.args[1].t === 'add') a.args[1].args.forEach((u) => push(sMul([neg1, u])));
+    else terms.push(a);
+  };
+  args.forEach(push);
+  let k = N(0); const groups = new Map();
+  for (const t of terms) {
+    const [c, rest] = splitTerm(t);
+    if (!rest.length) { k = radd(k, c); continue; }
+    const kk = rest.map(key).join('|');
+    if (!groups.has(kk)) groups.set(kk, { coef: N(0), rest });
+    const g = groups.get(kk); g.coef = radd(g.coef, c);
+  }
+  // sin^2(a) + cos^2(a) = 1
+  const sq = (name, a) => key(POW(FN(name, [a]), N(2)));
+  for (const [kk, g] of [...groups]) {
+    if (!groups.has(kk) || g.rest.length !== 1) continue;
+    const f = g.rest[0];
+    if (f.t === 'pow' && isNumV(f.e, 2) && f.b.t === 'fn' && f.b.name === 'sin') {
+      const kc = sq('cos', f.b.args[0]);
+      const h = groups.get(kc);
+      if (h && h.coef.n === g.coef.n && h.coef.d === g.coef.d) { k = radd(k, g.coef); groups.delete(kk); groups.delete(kc); }
+    }
+  }
+  const outT = [];
+  for (const g of groups.values()) if (g.coef.n !== 0) outT.push(rebuild(g.coef, g.rest));
+  outT.sort(byKey);
+  if (k.n !== 0) outT.push(k);
+  if (!outT.length) return N(0);
+  return outT.length === 1 ? outT[0] : ADD(outT);
+}
+
+const INVERSE = { sin: 'asin', cos: 'acos', tan: 'atan', sinh: 'asinh' };
+function angleOverPi(a) {
+  if (isNumV(a, 0)) return 0;
+  if (isPi(a)) return 1;
+  if (a.t === 'mul' && a.args.length === 2 && isNum(a.args[0]) && isPi(a.args[1])) return nval(a.args[0]);
+  return null;
+}
+function sFn(name, args) {
+  args = args.map(fixNeg);
+  const a = args[0];
+  const zero = N(0), one = N(1);
+  switch (name) {
+    case 'ln':
+      if (isNumV(a, 1)) return zero;
+      if (a.t === 'c' && a.name === 'e') return one;
+      if (a.t === 'pow' && a.b.t === 'c' && a.b.name === 'e') return a.e;
+      if (a.t === 'fn' && a.name === 'exp') return a.args[0];
+      break;
+    case 'exp':
+      if (a.t === 'fn' && a.name === 'ln' && safeEv(a.args[0]) > 0) return a.args[0];
+      break;
+    case 'log':
+      if (isNumV(a, 1)) return zero;
+      if (isNumV(a, 10)) return one;
+      if (a.t === 'pow' && isNumV(a.b, 10)) return a.e;
+      break;
+    case 'log2':
+      if (isNumV(a, 1)) return zero;
+      if (isNumV(a, 2)) return one;
+      if (a.t === 'pow' && isNumV(a.b, 2)) return a.e;
+      break;
+    case 'logb':
+      if (isNumV(args[1], 1)) return zero; break;
+    case 'abs':
+      if (isNum(a)) return N(Math.abs(a.n), a.d);
+      if (a.t === 'c' || (a.t === 'fn' && a.name === 'abs')) return a;
+      if (a.t === 'pow' && isNum(a.e) && a.e.d === 1 && a.e.n % 2 === 0) return a;
+      break;
+    case 'floor': case 'ceil': case 'round':
+      if (isNum(a)) { const v = a.n / a.d; return N(name === 'floor' ? Math.floor(v) : name === 'ceil' ? Math.ceil(v) : Math.floor(v + 0.5)); }
+      if (a.t === 'fn' && a.name === name) return a;
+      if (name === 'floor' && a.t === 'fn' && a.name === 'ceil') return a;
+      if (name === 'ceil' && a.t === 'fn' && a.name === 'floor') return a;
+      break;
+    case 'cbrt':
+      if (isNum(a)) {
+        const rn = Math.round(Math.cbrt(a.n)), rd = Math.round(Math.cbrt(a.d));
+        if (rn * rn * rn === a.n && rd * rd * rd === a.d) return N(rn, rd);
+      }
+      if (a.t === 'pow' && isNumV(a.e, 3)) return a.b;
+      break;
+    case 'sin': case 'cos': case 'tan': {
+      if (a.t === 'fn' && a.name === INVERSE[name]) return a.args[0];
+      const r = angleOverPi(a);
+      if (r !== null) {
+        const v = Math[name](r * Math.PI);
+        if (Number.isFinite(v) && Math.abs(v) < 1e6) { const w = v * 2; if (Math.abs(w - Math.round(w)) < 1e-9) return N(Math.round(w), 2); }
+      }
+      break;
+    }
+    case 'asin': case 'atan': case 'sinh': case 'tanh': {
+      if (isNumV(a, 0)) return zero;
+      const inv = { asin: 'sin', atan: 'tan' }[name];
+      if (inv && a.t === 'fn' && a.name === inv) { const v = safeEv(a.args[0]); if (Math.abs(v) < Math.PI / 2 - 1e-9) return a.args[0]; }
+      break;
+    }
+    case 'acos':
+      if (isNumV(a, 1)) return zero;
+      if (a.t === 'fn' && a.name === 'cos') { const v = safeEv(a.args[0]); if (v > 1e-9 && v < Math.PI - 1e-9) return a.args[0]; }
+      break;
+    case 'cosh': if (isNumV(a, 0)) return one; break;
+  }
+  return FN(name, args);
+}
+
+function simp(x) {
+  switch (x.t) {
+    case 'n': case 'c': return x;
+    case 'add': return sAdd(x.args.map(simp));
+    case 'mul': return sMul(x.args.map(simp));
+    case 'pow': return sPow(simp(x.b), simp(x.e));
+    default: return sFn(x.name, x.args.map(simp));
+  }
+}
+function simplify(tree) {
+  try {
+    let cur = tree;
+    for (let i = 0; i < 6; i++) { const nx = fixNeg(simp(cur)); if (key(nx) === key(cur)) return nx; cur = nx; }
+    return cur;
+  } catch (err) { if (err instanceof Overflow) return null; throw err; }
+}
+
+// ---------- printing ----------
+function fmtRat(n, d) {
+  if (d === 1) return String(n);
+  let dd = d, twos = 0, fives = 0;
+  while (dd % 2 === 0) { dd /= 2; twos++; }
+  while (dd % 5 === 0) { dd /= 5; fives++; }
+  const places = Math.max(twos, fives);
+  if (dd === 1 && places <= 6) return (n / d).toFixed(places);
+  return n + '/' + d;
+}
+const wrap = (r, min) => (r[1] < min ? '(' + r[0] + ')' : r[0]);
+const SYM = { pi: 'π', e: 'e', phi: 'φ', tau: 'τ' };
+function pr(x) {
+  switch (x.t) {
+    case 'n': { const s = fmtRat(x.n, x.d); return [s, x.n < 0 ? 3 : s.includes('/') ? 2 : 5]; }
+    case 'c': return [SYM[x.name], 5];
+    case 'add': {
+      let s = '';
+      x.args.forEach((t, i) => {
+        const [c, rest] = splitTerm(t);
+        const negt = c.n < 0;
+        const pos = negt ? rebuild(N(-c.n, c.d), rest) : t;
+        const str = wrap(pr(pos), 2);
+        s += i === 0 ? (negt ? '-' + str : str) : (negt ? ' - ' : ' + ') + str;
+      });
+      return [s, 1];
+    }
+    case 'mul': {
+      const [c, rest] = splitMul(x);
+      const num = [], den = [];
+      for (const f of rest) {
+        if (f.t === 'pow' && isNum(f.e) && f.e.n < 0) den.push(isNumV(f.e, -1) ? f.b : POW(f.b, N(-f.e.n, f.e.d)));
+        else num.push(f);
+      }
+      const nums = num.map((f) => wrap(pr(f), 4));
+      const dens = den.map((f) => wrap(pr(f), 4));
+      const ap = Math.abs(c.n);
+      if (ap !== 1 || (!nums.length)) nums.unshift(String(ap));
+      if (c.d !== 1) dens.unshift(String(c.d));
+      let s = nums.join('*');
+      if (dens.length === 1) s += '/' + dens[0]; else if (dens.length > 1) s += '/(' + dens.join('*') + ')';
+      const sign = c.n < 0;
+      return [(sign ? '-' : '') + s, sign ? 3 : (nums.length > 1 || dens.length) ? 2 : 4];
+    }
+    case 'pow': {
+      if (isNum(x.e) && x.e.n < 0) return ['1/' + wrap(pr(isNumV(x.e, -1) ? x.b : POW(x.b, N(-x.e.n, x.e.d))), 4), 2];
+      if (isNum(x.e) && x.e.n === 1 && x.e.d === 2) return ['sqrt(' + pr(x.b)[0] + ')', 5];
+      return [wrap(pr(x.b), 5) + '^' + wrap(pr(x.e), 5), 4];
+    }
+    default: {
+      if (x.name === 'fact') return [wrap(pr(x.args[0]), 5) + '!', 5];
+      if (x.name === 'mod') return [wrap(pr(x.args[0]), 4) + ' % ' + wrap(pr(x.args[1]), 4), 2];
+      return [x.name + '(' + x.args.map((a) => pr(a)[0]).join(', ') + ')', 5];
+    }
+  }
+}
+const show = (x) => pr(x)[0];
+
+// ---------- cost ----------
+const litCost = (n) => 1 + 0.15 * (String(Math.abs(n)).length - 1);
+const CONST_COST = { pi: 2, e: 2.5, phi: 3.5, tau: 3 };
+const FN_COST = { sin: 3, cos: 3, tan: 3.5, asin: 4.5, acos: 4.5, atan: 4.5, sinh: 4.5, cosh: 4.5, tanh: 4.5, ln: 3, log: 3, log2: 3, logb: 4, exp: 3, abs: 1.5, floor: 2.5, ceil: 2.5, round: 2.5, fact: 3, cbrt: 3, mod: 2 };
+
+// The first use of an operation gets its full value. Repeats still count, but
+// each repeat contributes less. Factorials are deliberately discounted faster.
+const OP_RETURNS = [1, 0.55, 0.3, 0.18, 0.12];
+const FN_RETURNS = [1, 0.45, 0.2, 0.1];
+const FACT_RETURNS = [1, 0.4, 0.15, 0.05];
+// Global function diminishing returns: after enough function calls, each
+// additional function bottoms out at 4% of its base reward.
+const FN_GLOBAL_RETURNS = [1, 0.75, 0.55, 0.4, 0.3, 0.22, 0.16, 0.12, 0.09, 0.07, 0.055, 0.04];
+const CONST_RETURNS = [1, 0.35, 0.15, 0.08];
+const diminishing = (n, schedule) => schedule[Math.min(n, schedule.length - 1)];
+
+function operationFamily(name) {
+  if (['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh'].includes(name)) return 'trig';
+  if (['ln', 'log', 'log2', 'logb', 'exp'].includes(name)) return 'log-exp';
+  if (['floor', 'ceil', 'round'].includes(name)) return 'rounding';
+  if (name === 'fact') return 'factorial';
+  if (name === 'cbrt') return 'root';
+  return name;
+}
+
+function cost(x) {
+  const state = { operators: Object.create(null), functions: Object.create(null), functionTotal: 0, constants: 0, kinds: new Set(), chainPenalty: 0 };
+  const opReward = (kind, base) => {
+    const n = state.operators[kind] || 0;
+    state.operators[kind] = n + 1;
+    state.kinds.add(kind);
+    return base * diminishing(n, OP_RETURNS);
+  };
+  const fnReward = (name, base) => {
+    const n = state.functions[name] || 0;
+    const overall = state.functionTotal++;
+    state.functions[name] = n + 1;
+    state.kinds.add(operationFamily(name));
+    const sameType = diminishing(n, name === 'fact' ? FACT_RETURNS : FN_RETURNS);
+    const overallReturn = diminishing(overall, FN_GLOBAL_RETURNS);
+    return base * Math.min(sameType, overallReturn);
+  };
+  const constantReward = (name) => {
+    const base = CONST_COST[name];
+    const n = state.constants++;
+    return base * diminishing(n, CONST_RETURNS);
+  };
+
+  function walk(node, parentFn) {
+    switch (node.t) {
+      case 'n': {
+        const s = fmtRat(node.n, node.d);
+        if (node.d === 1) return litCost(node.n) + (node.n < 0 ? 0.4 : 0);
+        if (s.includes('/')) return litCost(node.n) + litCost(node.d) + 1.0 + (node.n < 0 ? 0.4 : 0);
+        return 1 + 0.2 * (s.replace(/[-.]/g, '').length - 1) + (node.n < 0 ? 0.4 : 0);
+      }
+      case 'c': return constantReward(node.name);
+      case 'add': {
+        let total = 0;
+        for (const a of node.args) {
+          total += walk(a, null);
+          if (a.t === 'mul' && isNumV(a.args[0], -1)) total -= 0.4;
+        }
+        for (let i = 1; i < node.args.length; i++) total += opReward('+', 0.5);
+        return total;
+      }
+      case 'mul': {
+        const [coef, rest] = splitMul(node);
+        let total = 0, nNum = 0, nDen = 0;
+        for (const factor of rest) {
+          if (factor.t === 'pow' && isNum(factor.e) && factor.e.n < 0) {
+            nDen++;
+            total += walk(isNumV(factor.e, -1) ? factor.b : POW(factor.b, N(-factor.e.n, factor.e.d)), null);
+          } else {
+            nNum++;
+            total += walk(factor, null);
+          }
+        }
+        if (Math.abs(coef.n) !== 1) { nNum++; total += litCost(Math.abs(coef.n)); }
+        if (coef.d !== 1) { nDen++; total += litCost(coef.d); }
+        if (coef.n < 0) total += 0.4;
+        if (nNum === 0) { total += 1; nNum = 1; }
+        for (let i = 1; i < nNum; i++) total += opReward('*', 0.7);
+        for (let i = 0; i < nDen; i++) total += opReward('/', 1.0);
+        return total;
+      }
+      case 'pow': {
+        // e^x is treated as the exponential function, not as a constant plus a power.
+        if (node.b.t === 'c' && node.b.name === 'e') return walk(node.e, null) + fnReward('exp', 3.0);
+        const base = walk(node.b, null);
+        if (isNum(node.e)) {
+          if (node.e.n === 2 && node.e.d === 1) return base + opReward('^', 1.5);
+          if (node.e.n === 3 && node.e.d === 1) return base + opReward('^', 2.0);
+          if (node.e.n === 1 && node.e.d === 2) return base + opReward('root', 2.0);
+          if (node.e.n < 0) {
+            const positiveExponent = N(-node.e.n, node.e.d);
+            let positivePower = base;
+            if (isNumV(positiveExponent, 2)) positivePower += opReward('^', 1.5);
+            else if (isNumV(positiveExponent, 3)) positivePower += opReward('^', 2.0);
+            else positivePower += walk(positiveExponent, null) + opReward('^', 2.5);
+            return 1 + opReward('/', 1.0) + positivePower;
+          }
+        }
+        return base + walk(node.e, null) + opReward('^', 2.5);
+      }
+      default: {
+        const base = FN_COST[node.name] === undefined ? 2 : FN_COST[node.name];
+        let total = fnReward(node.name, base);
+        if (parentFn) state.chainPenalty += parentFn === node.name ? 0.65 : 0.25;
+        for (const a of node.args) total += walk(a, node.name);
+        return total;
+      }
+    }
+  }
+
+  let total = walk(x, null);
+
+   // Excessive function usage.
+   const functionPenalty = 0.12 * Math.pow(Math.max(0, state.functionTotal - 5), 1.5);
+   
+   // Deeply nested function chains.
+   let maxFnDepth = 0;
+   
+   (function inspectDepth(node, depth = 0) {
+   	if (node.t === 'fn') {
+   		depth++;
+   		maxFnDepth = Math.max(maxFnDepth, depth);
+   		for (const a of node.args) inspectDepth(a, depth);
+   		return;
+   	}
+   
+   	if (node.args) node.args.forEach(a => inspectDepth(a, 0));
+   	if (node.t === 'pow') {
+   		inspectDepth(node.b, 0);
+   		inspectDepth(node.e, 0);
+   	}
+   })(x);
+   
+   const nestingPenalty = 0.45 * Math.pow(Math.max(0, maxFnDepth - 3), 1.7);
+
+   // A product of unrelated irrational constants is usually just a way to stack
+   // expensive symbols. Keep the constants useful, but make a constant salad pay less.
+   let penalty = 0;
+   (function inspect(node) {
+      if (node.t === 'mul') {
+         const names = new Set();
+         for (const factor of node.args) {
+            const base = factor.t === 'pow' ? factor.b : factor;
+            if (base.t === 'c') names.add(base.name);
+         }
+         
+         if (names.size > 1) {
+            penalty += 1.25 * (names.size - 1);
+         }
+   
+         // Penalize unnecessarily large numerical coefficients.
+         const [coef] = splitMul(node);
+         const digits = String(Math.abs(coef.n)).length + String(coef.d).length;
+   
+         penalty += 0.8 * Math.pow(Math.max(0, digits - 5), 1.3);
+      }
+   
+      if (node.args) node.args.forEach(inspect);
+   
+      if (node.t === 'pow') {
+         inspect(node.b);
+         inspect(node.e);
+      }
+   })(x);
+   
+   // Penalize excessive expression length.
+   const expressionLength = show(x).length;
+   const excessLength = Math.max(0, expressionLength - 2.5 * Math.max(1, total));
+   const lengthPenalty = 0.15 * Math.pow(excessLength, 1.25);
+   const varietyBonus = Math.min(1.0, Math.max(0, state.kinds.size - 1) * 0.25);
+   total += varietyBonus;
+   total -= penalty + state.chainPenalty + functionPenalty + nestingPenalty + lengthPenalty;
+   return Math.max(0, total);
+}
+function proc(src){
+  const tree=parse(src), v=ev(tree); let s=null,simplified=true;
+  try{s=simplify(tree)}catch(e){s=null}
+  if(!s){s=tree;simplified=false}
+  const f={fn:{},c:{},pow:0,root:0};
+  (function w(n){if(n.t==='fn'){f.fn[n.name]=1;n.args.forEach(w)}else if(n.t==='c')f.c[n.name]=1;else if(n.t==='pow'){if(isNum(n.e)&&n.e.n===1&&n.e.d===2)f.root=1;else if(!(isNum(n.e)&&n.e.n<0))f.pow++;w(n.b);w(n.e)}else if(n.args)n.args.forEach(w)})(s);
+  let cst=0;try{cst=cost(s)}catch(e){}
+  return {v,text:show(s).replace(/\*/g,'×').replace(/sqrt\(/g,'√('),same:key(s)===key(tree),num:isNum(s)?{n:s.n,d:s.d}:null,f,cost:cst,simplified};
+}
+return {proc};
+}
+const EX=(function(){
+const C=makeCore(), EPOCH=Date.UTC(2026,10,16);
+function hashStr(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return h}
+function rngFrom(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296}}
+const dateStr=()=>new Date().toISOString().slice(0,10);
+const dayNo=d=>Math.max(1,Math.round((Date.parse(d+'T00:00:00Z')-EPOCH)/864e5)+1);
+/* ---- generation ---- */
+const OPS=[['+',30],['-',26],['*',20],['/',12],['^',7],['sin',4],['cos',4],['tan',2.5],['int',2.5],['der',2.5]], BIN=OPS.slice(0,5);
+const pick=(r,l)=>{let t=l.reduce((a,b)=>a+b[1],0)*r();for(const o of l)if((t-=o[1])<0)return o[0];return l[0][0]};
+const MEMES={69:'nice',420:'blaze it',67:'six seven',42:'the answer',666:'devilish',777:'jackpot',911:'never forget',1337:'leet',404:'not found',8008:'classic',80085:'classic x10',69420:'the combo',1234:'one two three four',12345:'staircase',9001:'over 9000',31337:'elite',123:'easy as',360:'no scope',187:'187',314:'pi digits',2718:'e digits',1618:'phi digits',1414:'root-2 digits',1732:'root-3 digits'};
+const POOL=[69,420,67,42,666,777,911,1337,404,8008,80085,69420,1234,12345,9001,31337,123,360,187];
+const ACROSS=[...Object.keys(MEMES),'3141','31415','27182','16180','90210','2468','1111','2222','3333','7777'];
+const HID=[69,420,666,1337,911,777,404,67,42];
+const mkN=(ip,fp,neg)=>{const v=+(ip+(fp?'.'+fp:''));neg=neg&&v!==0;return{ip,fp,neg,dec:fp.length,v,s:(neg?'-':'')+ip+(fp?'.'+fp:'')}};
+function genNum(r){
+  const x=r();let n;
+  if(x<.45)n=1+(r()*10|0);else if(x<.70)n=11+(r()*40|0);else if(x<.83)n=51+(r()*150|0);else if(x<.91)n=201+(r()*799|0);else if(x<.95)n=1000+(r()*9000|0);else if(x<.98)n=POOL[r()*POOL.length|0];else n=0;
+  let fp='';if(r()<1/7){fp+=r()*10|0;while(r()<1/3)fp+=r()*10|0}
+  return mkN(String(n),fp,r()<1/7);
+}
+const D=x=>x.s.replace('-','\u2212'),Q=x=>x.neg?'('+x.s+')':x.s;
+const t2=h=>h.replace(/<sup>(.*?)<\/sup>/g,'^$1').replace(/<sub>(.*?)<\/sub>/g,'_$1').replace(/<[^>]+>/g,'');
+const IF=[['p0',2],['p1',3],['p2',3],['p3',2],['p4',1],['sin',2],['cos',2],['exp',2],['inv',1.5]];
+const DF=[['p1',1.5],['p2',3],['p3',2],['p4',1],['p5',1],['sin',2],['cos',2],['exp',2],['ln',1.5],['tan',1],['xex',1],['xsin',1],['sin2',1]];
+const FNAME={p0:'a constant',p1:'x',p2:'x\u00B2',p3:'x\u00B3',p4:'x\u2074',p5:'x\u2075',sin:'sin x',cos:'cos x',exp:'e\u02E3',inv:'1/x',ln:'ln x',tan:'tan x',xex:'x\u00B7e\u02E3',xsin:'x\u00B7sin x',sin2:'sin\u00B2 x'};
+function calc(r,k){
+  const form=pick(r,k==='int'?IF:DF),A=genNum(r),B=k==='int'?genNum(r):null,poly=/^p\d/.test(form),n=poly?+form[1]:0;
+  const c=(poly&&n===0)||r()<.4?genNum(r):null,cs=c?Q(c):'1',ch=c?D(c):'',a=Q(A),b=B&&Q(B);
+  const sup=n==1?'':'<sup>'+n+'</sup>';
+  const FH={sin:'sin x',cos:'cos x',exp:'e<sup>x</sup>',ln:'ln x',tan:'tan x',xex:'x\u00B7e<sup>x</sup>',xsin:'x\u00B7sin x',sin2:'sin<sup>2</sup> x'};
+  const ig=poly?ch+(n?'x'+sup:''):form==='inv'?(c?ch+'/x':'1/x'):(c?ch+' ':'')+FH[form];
+  let s;
+  if(k==='int'){
+    s={p:`(${cs}*(${b}^${n+1}-${a}^${n+1})/${n+1})`,sin:`(${cs}*(cos(${a})-cos(${b})))`,cos:`(${cs}*(sin(${b})-sin(${a})))`,exp:`(${cs}*(e^(${b})-e^(${a})))`,inv:`(${cs}*(ln(${b})-ln(${a})))`}[poly?'p':form];
+  }else{
+    s={p:`(${cs}*${n}*${a}^${n-1})`,sin:`(${cs}*cos(${a}))`,cos:`(-${cs}*sin(${a}))`,exp:`(${cs}*e^(${a}))`,ln:`(${cs}/${a})`,tan:`(${cs}/cos(${a})^2)`,xex:`(${cs}*(e^(${a})+${a}*e^(${a})))`,xsin:`(${cs}*(sin(${a})+${a}*cos(${a})))`,sin2:`(${cs}*2*sin(${a})*cos(${a}))`}[poly?'p':form];
+  }
+  const html=k==='int'?`<span class="cal">\u222B<sup>${D(B)}</sup><sub>${D(A)}</sub></span> ${ig} dx`:`<span class="cal">d/dx</span>[${ig}]<sub>x=${D(A)}</sub>`;
+  return{kind:k,form,nums:k==='int'?[A,B,...(c?[c]:[])]:[...(c?[c]:[]),A],src:s,html};
+}
+function genTerm(r,k){
+  if(k.length===1)k='num';
+  let t;
+  if(k==='num'){const x=genNum(r);t={kind:'num',nums:[x],src:Q(x),html:D(x)}}
+  else if(k==='int'||k==='der')t=calc(r,k);
+  else{
+    let src,html,nums=[],special=false;
+    if(r()<.2){const kk=1+(r()*12|0),m=[1,2,3,4,6][r()*5|0];special=true;html=(kk==1?'':kk)+'\u03C0'+(m>1?'/'+m:'');src=`(${kk}*pi/${m})`}
+    else{const x=genNum(r);nums=[x];html=D(x);src=Q(x)}
+    t={kind:k,nums,special,src:`${k}(${src})`,html:`${k}(${html})`};
+  }
+  t.txt=t2(t.html);return t;
+}
+const SYM={'*':'\u00D7','/':'\u00F7','-':'\u2212','+':'+','^':'^'};
+function build(r){
+  let n=2;while(r()<.25)n++;
+  const terms=[],ops=[];
+  for(let i=0;i<n;i++){terms.push(genTerm(r,pick(r,OPS)));if(i<n-1)ops.push(pick(r,BIN))}
+  const src=terms.map((t,i)=>(i?ops[i-1]:'')+t.src).join('');
+  let a;try{a=C.proc(src)}catch(e){return null}
+  if(!isFinite(a.v)||Math.abs(a.v)>1e30)return null;
+  for(const t of terms)if(t.kind!=='num'){try{t.a=C.proc(t.src)}catch(e){return null}}
+  const disp=terms.map((t,i)=>(i?' '+SYM[ops[i-1]]+' ':'')+(i&&t.kind==='num'&&t.nums[0].neg?'('+t.txt+')':t.txt)).join('');
+  return{terms,ops,src,a,nums:terms.flatMap(t=>t.nums),disp};
+}
+function genRoll(r){for(let i=0;i<200;i++){const R=build(r);if(R)return R}throw new Error('no roll')}
+/* ---- number properties ---- */
+const SET=a=>{const s=new Set(a);return n=>s.has(n)};
+const ds=String,isP=n=>{if(n<2||n>1e9)return false;if(n%2==0)return n==2;for(let i=3;i*i<=n;i+=2)if(n%i==0)return false;return true};
+const rt=(n,k)=>{const r=Math.round(Math.pow(n,1/k));return Math.pow(r,k)===n};
+const rev=n=>+ds(n).split('').reverse().join(''),pal=n=>n>=11&&ds(n)===ds(n).split('').reverse().join('');
+const run=(n,d)=>{const s=ds(n);if(s.length<3)return false;for(let i=1;i<s.length;i++)if(+s[i]-+s[i-1]!==d)return false;return true};
+const semi=n=>{if(n<4||n>1e7)return false;let c=0,m=n;for(let p=2;p*p<=m;p++)while(m%p==0){m/=p;c++}if(m>1)c++;return c==2};
+const NP=[
+['zero','Zero',n=>n===0],['one','One',n=>n===1],['two','Even prime',n=>n===2],['ten','Ten',n=>n===10],['dozen','A dozen',n=>n===12],['baker',"Baker's 13",n=>n===13],['c100','100',n=>n===100],['k1','1000',n=>n===1000],
+['round','Round',n=>n>=20&&n%10===0&&Math.log10(n)%1!==0],['p10','10ⁿ',n=>n>=10&&Math.log10(n)%1===0],
+['prime','Prime',n=>n>2&&isP(n)],['bigp','Big prime',n=>n>=100&&isP(n)],['twin','Twin prime',n=>isP(n)&&(isP(n-2)||isP(n+2))],['mers','Mersenne',SET([3,7,31,127,8191])],['ferm','Fermat',SET([5,17,257,65537])],['palp','Pal. prime',n=>pal(n)&&isP(n)],['emirp','Emirp',n=>n>=13&&isP(n)&&!pal(n)&&isP(rev(n))],
+['sq','Square',n=>n>=4&&rt(n,2)],['cube','Cube',n=>n>=8&&rt(n,3)],['p4','4th power',n=>n>=16&&rt(n,4)],['p2','2ⁿ',n=>n>=16&&Math.log2(n)%1===0],['p3','3ⁿ',SET([9,27,81,243,729,2187,6561,19683])],
+['fib','Fibonacci',SET([5,8,13,21,34,55,89,144,233,377,610,987,1597,2584,4181,6765,10946])],['luc','Lucas',SET([4,11,18,29,47,76,123,199,322,521,843,1364])],['tri','Triangular',n=>n>=6&&Number.isInteger((Math.sqrt(8*n+1)-1)/2)],['tet','Tetrahedral',SET([4,10,20,35,56,84,120,165,220,286,364,455,560,680,816,969])],['fact','Factorial',SET([6,24,120,720,5040,40320,362880])],['perf','Perfect',SET([6,28,496,8128])],['cat','Catalan',SET([14,42,132,429,1430,4862,16796])],['narc','Narcissistic',SET([153,370,371,407,1634,8208,9474])],['kap','Kaprekar',SET([9,45,55,99,297,703,999,2223,2728,4879,4950,5050,5292,7272,7777,9999])],['hcn','Highly comp.',SET([12,24,36,48,60,120,180,240,360,720,840,1260,1680,2520,5040,7560,10080])],['auto','Automorphic',SET([25,76,376,625,9376])],['ram','Taxicab',n=>n===1729],
+['pal','Palindrome',pal],['rep','Repdigit',n=>n>=11&&/^(\d)\1+$/.test(ds(n))],['asc','Run up',n=>run(n,1)],['desc','Run down',n=>run(n,-1)],['alt','Alternating',n=>ds(n).length>=4&&/^(\d)(?!\1)(\d)(\1\2)+\1?$/.test(ds(n))],['semi','Semiprime',semi],['lucky7','Has a 7',n=>ds(n).includes('7')],['odd','All odd',n=>n>=10&&/^[13579]+$/.test(ds(n))],['even','All even',n=>n>=10&&/^[2468]+$/.test(ds(n))],['big4','4+ digits',n=>n>=1000],['big5','5+ digits',n=>n>=10000],['sev','Triple run',n=>/(\d)\1\1/.test(ds(n))]
+];
+const CONSTS=[['cpi','Pi-ish',Math.PI,.002],['ce','e-ish',Math.E,.005],['cphi','Golden-ish',1.618034,.003],['csq2','Root-two-ish',Math.SQRT2,.003],['csq3','Root-three-ish',1.7320508,.003],['ctau','Tau-ish',2*Math.PI,.004],['cln2','Ln-2-ish',Math.LN2,.003]];
+const FRACS={5:'Half',25:'Quarter',75:'Three quarters',125:'Eighth',333:'Thirds',667:'Two thirds'};
+const LAB={};
+NP.forEach(p=>LAB['n:'+p[0]]=p[1]);
+for(const k in MEMES)LAB['n:m'+k]=+k+' - '+MEMES[k];
+HID.forEach(m=>LAB['n:h'+m]='Hidden '+m);
+ACROSS.forEach(m=>LAB['n:x'+m]='Across: '+m);
+CONSTS.forEach(c=>LAB['n:'+c[0]]=c[1]);
+for(const k in FRACS)LAB['n:f'+k]=FRACS[k];
+Object.assign(LAB,{'n:neg':'Negative','n:ndec':'Neg decimal','n:nmeme':'Neg meme','n:d1':'Decimal','n:d2':'2 decimals','n:d3':'3 decimals','n:d5':'5+ decimals','n:t0':'Trailing zero','n:sub':'Sub-one','n:mm':'Meme - meme'});
+function numProps(x){
+  const o=[],{ip,fp,neg}=x,n=+ip;
+  if(x.skip){if(neg)o.push('neg');return o}
+  if(neg)o.push('neg');if(neg&&fp)o.push('ndec');
+  if(!fp){
+    for(const p of NP)if(p[2](n))o.push(p[0]);
+    if(MEMES[n]){o.push('m'+n);if(neg)o.push('nmeme')}
+    for(const m of HID)if(ds(n).includes(m)&&n!==m)o.push('h'+m);
+  }else{
+    o.push('d1');if(fp.length>=2)o.push('d2');if(fp.length>=3)o.push('d3');if(fp.length>=5)o.push('d5');
+    if(/0$/.test(fp))o.push('t0');if(ip==='0')o.push('sub');
+    const dg=ip+fp,idx=ip.length;let best=null;
+    for(const m of ACROSS){let i=dg.indexOf(m);while(i>=0){if(i<idx&&i+m.length>idx&&(!best||m.length>best.length))best=m;i=dg.indexOf(m,i+1)}}
+    if(best)o.push('x'+best);
+    if(MEMES[+ip]&&MEMES[+fp])o.push('mm');
+    for(const c of CONSTS)if(Math.abs(x.v-c[2])<c[3])o.push(c[0]);
+    if(FRACS[fp])o.push('f'+fp);
+  }
+  return o;
+}
+/* ---- other badges ---- */
+Object.assign(LAB,{
+'o:+':'Plus','o:-':'Minus','o:*':'Times','o:/':'Divide','o:^':'Power','k:sin':'Sine','k:cos':'Cosine','k:tan':'Tangent','k:int':'Integral','k:der':'Derivative',
+'T:pi':'Special angle','T:col':'Trig collapse','C:int':'Clean calculus','C:neg':'Neg calculus','C:zero':'Zero calculus','C:irr':'Messy calculus',
+'R:c2':'Minimal','R:c3':'3 terms','R:c4':'4 terms','R:c5':'5 terms','R:c6':'6 terms','R:c7':'Mega chain',
+'R:mono':'Monotone','R:uniq':'All unique ops','R:arith':'Full arithmetic','R:tower':'Tower','R:dblneg':'Double negative','R:negsq':'Neg even power','R:twins':'Twins','R:trip':'Triplets','R:mirror':'Mirror','R:up':'Stairs up','R:down':'Stairs down','R:trig2':'Trig combo','R:ftrig':'Full trig','R:duet':'Duet','R:calc2':'Calc \u00D72','R:tiny':'All tiny','R:spread':'Huge spread','R:alldec':'All decimals','R:allneg':'All negative','R:big':'5-digit',
+'S:single':'Single value','S:irred':'Irreducible','S:half':'Halved','S:fifth':'Fifth','S:grew':'Grew','S:frac':'Fraction','S:zero':'Zero-sum','S:one':'Unity','S:pi':'Has \u03C0','S:e':'Has e','S:trig':'Has trig','S:ln':'Has ln','S:pow':'Has power','S:sqrt':'Has \u221A','S:abs':'Has abs','S:x5':'Complexity 5+','S:x10':'Complexity 10+','S:x20':'Complexity 20+',
+'A:int':'Integer','A:nint':'Non-integer','A:h6':'>1M','A:h9':'>1B','A:h12':'>1T','A:h18':'>1Qi','A:t3':'<0.001','A:t6':'<1e-6','A:almost':'Near-integer','A:echo':'Echo','A:npi':'\u2248 \u03C0','A:ne':'\u2248 e','A:nphi':'\u2248 \u03C6','A:rdec':'Repeating decimal','A:irr':'Irrational'});
+for(const f in FNAME){LAB['F:int:'+f]='\u222B '+FNAME[f];LAB['F:der:'+f]='d/dx '+FNAME[f]}
+Object.keys(LAB).filter(k=>k[0]==='n').forEach(k=>LAB['A:'+k.slice(2)]='Ans: '+LAB[k]);
+const denOf=id=>{const c=id[0];return c==='n'?'num':c==='o'?'op':c==='k'?'term':c==='T'?'trig':c==='C'?'calc':c==='F'?id.slice(2,5).replace(':',''):'roll'};
+const fmtV=(v,a)=>{if(a&&a.num&&a.num.d===1)return String(a.num.n);if(Number.isInteger(v)&&Math.abs(v)<1e15)return String(v);const av=Math.abs(v);if(av>=1e15||(av>0&&av<1e-6))return v.toExponential(8).replace(/\.?0+e/,'e');return String(+v.toPrecision(12))};
+function ansInfo(v,a){
+  const neg=v<0,av=Math.abs(v);let s=null;
+  if(a.num){let d=a.num.d;while(d%2==0)d/=2;while(d%5==0)d/=5;if(d===1&&av<1e15)s=String(+av.toFixed(6))}
+  if(s===null||/e/.test(s))return{skip:true,neg,ip:'',fp:'',v:av};
+  const [ip,fp='']=s.split('.');return{ip,fp,neg,v:av,dec:fp.length};
+}
+function badgesFor(R){
+  const T=R.terms,n=T.length,a=R.a,G=[],O=R.ops;
+  T.forEach((t,i)=>{
+    if(i)G.push({k:'op',i:i-1,ids:['o:'+O[i-1]]});
+    const ids=[];
+    if(t.kind!=='num')ids.push('k:'+t.kind);
+    if(t.form)ids.push('F:'+t.kind+':'+t.form);
+    if(t.special)ids.push('T:pi');
+    t.nums.forEach(x=>numProps(x).forEach(p=>ids.push('n:'+p)));
+    G.push({k:'term',i,ids});
+  });
+  const st=[],nm=R.nums,pl=i=>T[i].kind==='num';
+  st.push(n===2?'R:c2':'R:c'+Math.min(n,7));
+  if(n>=3&&new Set(O).size===1)st.push('R:mono');
+  if(n>=3&&new Set(O).size===O.length)st.push('R:uniq');
+  if(['+','-','*','/'].every(o=>O.includes(o)))st.push('R:arith');
+  if(O.some((o,i)=>o==='^'&&O[i+1]==='^'))st.push('R:tower');
+  if(O.some((o,i)=>o==='-'&&pl(i+1)&&T[i+1].nums[0].neg))st.push('R:dblneg');
+  if(O.some((o,i)=>o==='^'&&pl(i)&&T[i].nums[0].neg&&pl(i+1)&&!T[i+1].nums[0].fp&&T[i+1].nums[0].v%2===0&&T[i+1].nums[0].v>0))st.push('R:negsq');
+  const same=(x,y)=>pl(x)&&pl(y)&&T[x].nums[0].s===T[y].nums[0].s;
+  if(T.some((_,i)=>i&&same(i,i-1)))st.push('R:twins');
+  if(T.some((_,i)=>i>1&&same(i,i-1)&&same(i,i-2)))st.push('R:trip');
+  if(n>=3&&same(0,2))st.push('R:mirror');
+  if(n>=3&&T.every((_,i)=>pl(i))){const v=T.map(t=>t.nums[0].neg?-t.nums[0].v:t.nums[0].v);if(v.every((x,i)=>!i||x>v[i-1]))st.push('R:up');if(v.every((x,i)=>!i||x<v[i-1]))st.push('R:down')}
+  const K=T.map(t=>t.kind),tg=K.filter(k=>k==='sin'||k==='cos'||k==='tan').length;
+  if(tg>=2)st.push('R:trig2');if(['sin','cos','tan'].every(k=>K.includes(k)))st.push('R:ftrig');
+  if(K.includes('int')&&K.includes('der'))st.push('R:duet');
+  if(K.filter(k=>k==='int'||k==='der').length>=2)st.push('R:calc2');
+  if(n>=3&&nm.length&&nm.every(x=>!x.fp&&!x.neg&&x.v<10))st.push('R:tiny');
+  const nz=nm.filter(x=>x.v>0).map(x=>x.v);if(nz.length>1&&Math.max(...nz)/Math.min(...nz)>=1000)st.push('R:spread');
+  if(nm.length>=2&&nm.every(x=>x.fp))st.push('R:alldec');if(nm.length>=2&&nm.every(x=>x.neg))st.push('R:allneg');
+  if(nm.some(x=>x.v>=10000))st.push('R:big');
+  G.push({k:'roll',ids:st});
+  const s=[],f=a.f,L=a.text.length,ol=R.disp.length;
+  if(a.num)s.push('S:single');if(a.same)s.push('S:irred');if(L*2<=ol)s.push('S:half');if(L*5<=ol)s.push('S:fifth');if(L>ol)s.push('S:grew');
+  if(a.num&&a.num.d>1)s.push('S:frac');if(a.num&&a.num.n===0)s.push('S:zero');if(a.num&&a.num.n===1&&a.num.d===1)s.push('S:one');
+  if(f.c.pi)s.push('S:pi');if(f.c.e)s.push('S:e');if(f.fn.sin||f.fn.cos||f.fn.tan)s.push('S:trig');if(f.fn.ln)s.push('S:ln');if(f.pow)s.push('S:pow');if(f.root)s.push('S:sqrt');if(f.fn.abs)s.push('S:abs');
+  if(a.cost>=5)s.push('S:x5');if(a.cost>=10)s.push('S:x10');if(a.cost>=20)s.push('S:x20');
+  for(const t of T){
+    if(t.kind==='sin'||t.kind==='cos'||t.kind==='tan'){if(t.a.num)s.push('T:col')}
+    else if(t.a){const q=t.a;if(q.num&&q.num.d===1)s.push('C:int');if(q.v<0)s.push('C:neg');if(q.v===0)s.push('C:zero');if(!q.num)s.push('C:irr')}
+  }
+  G.push({k:'simp',ids:s});
+  const v=a.v,av=Math.abs(v),A=[];
+  numProps(ansInfo(v,a)).forEach(p=>A.push('A:'+p));
+  A.push(Number.isInteger(v)?'A:int':'A:nint');
+  [[1e6,'h6'],[1e9,'h9'],[1e12,'h12'],[1e18,'h18']].forEach(x=>{if(av>=x[0])A.push('A:'+x[1])});
+  if(av>0&&av<1e-3)A.push('A:t3');if(av>0&&av<1e-6)A.push('A:t6');
+  if(!a.num&&!Number.isInteger(v)&&Math.abs(v-Math.round(v))<1e-6)A.push('A:almost');
+  if(nm.length>=2&&nm.some(x=>Math.abs((x.neg?-x.v:x.v)-v)<1e-9))A.push('A:echo');
+  if(Math.abs(v-Math.PI)<1e-3)A.push('A:npi');if(Math.abs(v-Math.E)<1e-3)A.push('A:ne');if(Math.abs(v-1.6180339)<1e-3)A.push('A:nphi');
+  if(a.num&&a.num.d>1){let d=a.num.d;while(d%2==0)d/=2;while(d%5==0)d/=5;if(d>1)A.push('A:rdec')}
+  if(!a.num&&!Number.isInteger(v))A.push('A:irr');
+  G.push({k:'ans',ids:A});
+  return G;
+}
+/* ---- odds calibration ---- */
+const P0={'n:neg':1/7,'n:d1':1/7,'n:d2':1/21,'n:d3':1/63,'n:d5':1/567,'R:c2':.75,'R:c3':3/16,'R:c4':3/64,'R:c5':3/256,'R:c6':3/1024,'R:c7':1/1024,'o:+':30/95,'o:-':26/95,'o:*':20/95,'o:/':12/95,'o:^':7/95,'k:sin':4/110.5,'k:cos':4/110.5,'k:tan':2.5/110.5,'k:int':2.5/110.5,'k:der':2.5/110.5};
+let PROB={},TOT=[],THR=[];
+const BOUNDS=[.4,.15,.05,.01,.002,2e-4,2e-5];
+function calibrate(done,N=10000){
+  const cnt={},den={num:0,op:0,term:0,int:0,der:0,trig:0,calc:0,roll:0},tot=[],r=rngFrom(hashStr('exprdle:calib'));let i=0;
+  (function chunk(){
+    for(let k=0;k<100&&i<N;k++,i++){
+      const R=genRoll(r);
+      den.num+=R.nums.length;den.op+=R.ops.length;den.term+=R.terms.length;den.roll++;
+      R.terms.forEach(t=>{if(t.kind==='int'||t.kind==='der'){den[t.kind]++;den.calc++}else if(t.kind!=='num')den.trig++});
+      for(const g of badgesFor(R))for(const id of g.ids)cnt[id]=(cnt[id]||0)+1;
+    }
+    if(i<N)return setTimeout(chunk);
+    for(const id in LAB)PROB[id]=P0[id]??Math.min(.97,Math.max(Math.max(cnt[id]||0,.5)/den[denOf(id)],1/60000));
+    // totals measured with final odds
+    const r2=rngFrom(hashStr('exprdle:calib2'));
+    for(let j=0;j<1500;j++){const R=genRoll(r2);let s=0;for(const g of badgesFor(R))for(const id of g.ids)s+=100/PROB[id];tot.push(s)}
+    tot.sort((a,b)=>a-b);TOT=tot;THR=BOUNDS.map(b=>tot[Math.min(tot.length-1,Math.floor(tot.length*(1-b)))]);
+    done();
+  })();
+}
+const inst=id=>{const p=PROB[id]||1/1000,ip=1/p;return{id,label:LAB[id]||id,p,inv:ip,mag:100/p,tier:ip<2.5?0:ip<7?1:ip<30?2:ip<150?3:ip<1000?4:ip<8000?5:ip<50000?6:7}};
+const totTier=m=>{let i=0;while(i<THR.length&&m>=THR[i])i++;return Math.min(i,7)};
+const pctile=m=>{let lo=0,hi=TOT.length;while(lo<hi){const mid=(lo+hi)>>1;if(TOT[mid]<m)lo=mid+1;else hi=mid}return lo/TOT.length};
+const fmtMag=m=>Math.floor(m).toLocaleString();
+return{genRoll,badgesFor,calibrate,inst,totTier,pctile,fmtMag,fmtV,rngFrom,hashStr,dateStr,dayNo,LAB,get P(){return PROB}};
+})();
+(function(){
+const $=s=>document.querySelector(s);
+let mode='daily',speed=1,skip=false,token=0,muted=false,ready=false;
+try{muted=localStorage.getItem('exprdle:mute')==='1';speed=+localStorage.getItem('exprdle:spd')||1}catch(e){}
+const rd=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},wr=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+/* sound */
+const SFX=(function(){
+  let ctx=null,master=null;const PENTA=[1,9/8,5/4,3/2,5/3,2,9/4,5/2,3,10/3,4];
+  function ensure(){if(ctx){if(ctx.state==='suspended')ctx.resume();return ctx}try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;ctx=new AC();master=ctx.createGain();master.gain.value=.2;master.connect(ctx.destination)}catch(e){ctx=null}return ctx}
+  function tone(f,at,dur,type,vol,f2){const c=ensure();if(!c||muted||skip)return;const t=c.currentTime+at,o=c.createOscillator(),g=c.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+dur);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol||.4,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(master);o.start(t);o.stop(t+dur+.05)}
+  const OPF={'+':523,'-':392,'*':659,'/':440,'^':784};
+  return{unlock:ensure,tone,
+    num(v){tone(262*Math.pow(2,(Math.floor(Math.abs(v))%12)/12),0,.4,'triangle',.3)},
+    neg(){tone(200,0,.3,'sawtooth',.14,110)},
+    dec(n){for(let i=0;i<Math.min(n,6);i++)tone(900+i*120,i*.05,.4,'sine',.12)},
+    op(o){tone(OPF[o]||500,0,.1,o==='^'?'square':'triangle',o==='^'?.12:.3)},
+    fn(k){if(k==='int'){[523,659,784,1047].forEach((f,i)=>tone(f,i*.4,.35,'sine',.18))}else if(k==='der'){tone(1200,0,.3,'triangle',.25,300)}else tone(380,0,.3,'sine',.3,1100)},
+    meme(){[440,554,659,880].forEach((f,i)=>tone(f,i*.05,.4,'square',.1));tone(110,0,.4,'sawtooth',.1,220)},
+    badge(t){const n=Math.min(2+t,8);for(let i=0;i<n;i++){tone(523.25*PENTA[i],i*.05,.4,'triangle',.18+t*.015);if(t>=3)tone(1046*PENTA[i],i*.05,.4,'sine',.06)}if(t>=5)for(let k=0;k<6;k++)tone(1800+Math.random()*2400,.3+k*.07,.4,'sine',.06)},
+    simp(){tone(200,0,.5,'sine',.25,1600);tone(300,.05,.5,'triangle',.1,2000)},
+    ans(){[523,659,784,1047,1319].forEach((f,i)=>tone(f,i*.08,.4,'triangle',.25))},
+    total(t){const n=3+t*2;for(let i=0;i<n;i++){tone(523.25*PENTA[Math.min(i,10)],i*.075,.35,'triangle',.3);if(t>=3)tone(1046*PENTA[Math.min(i,10)],i*.075,.4,'sine',.1)}[1,5/4,3/2,2].forEach(r=>tone(1046*r,n*.075,.9+t*.12,'triangle',.16));if(t>=7){tone(130,n*.075,1.8,'sawtooth',.07)}}
+  };
+})();
+/* confetti */
+const Conf=(function(){let cv,cx,ps=[],raf=0;function init(){if(cv)return;cv=document.createElement('canvas');cv.style.cssText='position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:50';document.body.appendChild(cv);cx=cv.getContext('2d');rs();addEventListener('resize',rs)}function rs(){cv.width=innerWidth;cv.height=innerHeight}
+  function loop(){cx.clearRect(0,0,cv.width,cv.height);ps=ps.filter(p=>p.l++<p.m&&p.y<cv.height+20);for(const p of ps){p.vy+=.22;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.fillStyle=p.c;cx.fillRect(-p.s/2,-p.s/3,p.s,p.s*.6);cx.restore()}raf=ps.length?requestAnimationFrame(loop):0}
+  return{fire(t,x,y){if(skip||matchMedia('(prefers-reduced-motion: reduce)').matches)return;init();const col=t===7?['#ff5f6d','#ffc371','#47e891','#4facfe','#b06ab3']:[getComputedStyle(document.documentElement).getPropertyValue('--t'+t).trim()||'#888','#fff'];const n=12+t*22;for(let i=0;i<n;i++){const a=-Math.PI/2+(Math.random()-.5)*2.2,sp=3+Math.random()*(5+t);ps.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,s:5+Math.random()*6,r:0,vr:(Math.random()-.5)*.4,c:col[i%col.length],l:0,m:90+Math.random()*60})}if(!raf)raf=requestAnimationFrame(loop)}}})();
+function shake(t){if(skip||matchMedia('(prefers-reduced-motion: reduce)').matches)return;const a=$('#app');a.style.setProperty('--sh',(1+t*1.6)+'px');a.style.setProperty('--shd',(90+t*70)+'ms');a.classList.remove('shake');void a.offsetWidth;a.classList.add('shake')}
+const TN=['common','uncommon','rare','obscure','legendary','mythic','unheard','unforeseen'];
+const wait=ms=>skip?Promise.resolve():new Promise(r=>setTimeout(r,ms/speed));
+const el=(tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e};
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+let mag=0,shown=0,counter=0;
+function setMag(to){mag=to;cancelAnimationFrame(counter);const from=shown,t0=performance.now();(function f(now){const k=skip?1:Math.min(1,(now-t0)/(350/speed));shown=from+(mag-from)*(1-Math.pow(1-k,3));$('#mag').textContent=EX.fmtMag(shown);if(k<1)counter=requestAnimationFrame(f)})(t0)}
+function sound(id,i){ if(id==='n:neg'||id==='A:neg')return SFX.neg(); if(/^[nA]:(d\d|t0|sub)$/.test(id))return SFX.dec(+((id.match(/\d/)||[2])[0])); if(/^[nA]:(m|x|h|mm)/.test(id)&&!/^[nA]:(mers|mm$)/.test(id)&&/^[nA]:[mxh]\d/.test(id))return SFX.meme(); SFX.badge(i.tier) }
+async function chip(id,tk){
+  const i=EX.inst(id),c=el('span','chip tier pop');c.dataset.t=i.tier;
+  c.innerHTML=`<b>${esc(i.label)}</b><i>1 in ${i.inv<10?i.inv.toFixed(1):Math.round(i.inv).toLocaleString('en-US')}</i><em>+${EX.fmtMag(i.mag)}</em>`;
+  $('#feed').prepend(c);sound(id,i);setMag(mag+i.mag);if(i.tier>=1)shake(i.tier);
+  if(i.tier>=4){const r=c.getBoundingClientRect();Conf.fire(i.tier,r.left+r.width/2,r.top)}
+  await wait(260+i.tier*110);return i;
+}
+async function play(R,label){
+  const tk=++token;skip=false;mag=0;shown=0;$('#mag').textContent='0';
+  const ex=$('#expr'),feed=$('#feed');ex.innerHTML='';feed.innerHTML='';$('#res').hidden=true;$('#after').hidden=true;$('#tot').innerHTML='';$('#skip').hidden=false;$('#roll').disabled=true;
+  const G=EX.badgesFor(R),live=()=>tk===token;let total=0;
+  const run=async g=>{for(const id of g.ids){if(!live())return;total+=EX.inst(id).mag;await chip(id,tk)}};
+  for(const g of G){
+    if(!live())return;
+    if(g.k==='op'){const s=el('span','tk op','&nbsp;'+({'*':'\u00D7','/':'\u00F7','-':'\u2212'}[R.ops[g.i]]||R.ops[g.i])+'&nbsp;');ex.appendChild(s);SFX.op(R.ops[g.i]);await wait(420);await run(g)}
+    else if(g.k==='term'){const t=R.terms[g.i];let h=t.html;if(g.i&&t.kind==='num'&&t.nums[0].neg)h='('+h+')';const s=el('span','tk term k-'+t.kind,h);ex.appendChild(s);
+      if(t.kind==='num'){SFX.num(t.nums[0].v);if(t.nums[0].neg)setTimeout(SFX.neg,120)}else SFX.fn(t.kind);await wait(t.kind==='int'||t.kind==='der'?900:650);await run(g)}
+    else if(g.k==='roll'){await wait(250);await run(g)}
+    else if(g.k==='simp'){
+      const rs=$('#res');rs.hidden=false;$('#orig').textContent=R.disp;$('#simp').innerHTML='<span class="pending">simplifying\u2026</span>';$('#ans').innerHTML='';
+      SFX.simp();await wait(900);if(!live())return;
+      $('#simp').textContent=R.a.text;$('#simp').classList.add('fade-in');await wait(500);await run(g)}
+    else if(g.k==='ans'){
+      const a=R.a,v=a.v;let h=`<b class="big">${EX.fmtV(v,a)}</b>`;if(a.num&&a.num.d>1)h+=` <span class="muted">${a.num.n}/${a.num.d}</span>`;else if(!a.num&&!Number.isInteger(v)||(a.num&&0))h+='';
+      SFX.ans();$('#ans').innerHTML=h+' <span class="muted">:3</span>';await wait(800);await run(g)}
+  }
+  if(!live())return;
+  const tt=EX.totTier(total),pc=EX.pctile(total);
+  SFX.total(tt);shake(Math.min(7,tt+2));Conf.fire(tt,innerWidth/2,innerHeight/2);
+  $('#tot').innerHTML=`<span class="tier big pop" data-t="${tt}">${TN[tt]}</span> <span class="muted small">better than ${(pc*100).toFixed(pc>.99?2:0)}% of rolls. earns ${G.reduce((a,g)=>a+g.ids.length,0)} badges.</span>`;
+  setMag(total);$('#skip').hidden=true;$('#roll').disabled=false;$('#after').hidden=false;
+  const st=rd('exprdle:stats')||{rolls:0,best:0};st.rolls++;if(total>st.best)st.best=total;wr('exprdle:stats',st);showStats();
+  if(mode==='daily'){const k='exprdle:d:'+EX.dateStr();const o=rd(k);if(!o||total>o.mag)wr(k,{mag:total})}
+  const badgeCount = G.reduce((a,g)=>a+g.ids.length,0);
+  const topPct = (1-pc)*100;
+  R._share=`Exprdle ${label}\n${R.disp} = ${EX.fmtV(R.a.v,R.a)}\n${EX.fmtMag(total).toLocaleString()} Mag - ${TN[tt]}\nTop ${topPct.toFixed(topPct<1?2:0)}% - ${badgeCount} badges earned\nCan you beat my score? Try it out at\nhttps://mathillion.github.io/exprdle`;
+}
+function showStats(){const st=rd('exprdle:stats')||{rolls:0,best:0};let t=`${st.rolls} rolls, best ${EX.fmtMag(st.best)} Mag`;if(mode==='daily'){const o=rd('exprdle:d:'+EX.dateStr());if(o)t+=`, today ${EX.fmtMag(o.mag)}`}$('#stats').textContent=t}
+let cur=null;
+function doRoll(){
+  if(!ready)return;SFX.unlock();
+  let R,label;
+  if(mode==='daily'){const d=EX.dateStr();R=EX.genRoll(EX.rngFrom(EX.hashStr('exprdle:'+d)));label='Daily #'+EX.dayNo(d)}
+  else{R=EX.genRoll(Math.random);label='Unlimited'}
+  cur=R;play(R,label);
+}
+function setMode(m){mode=m;document.querySelectorAll('.seg button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));token++;$('#roll').disabled=!ready;$('#skip').hidden=true;
+  $('#roll').textContent=m==='daily'?(rd('exprdle:d:'+EX.dateStr())?'Replay today\u2019s roll':'Roll today\u2019s'):'Roll';
+  $('#issue').textContent=m==='daily'?'Daily #'+EX.dayNo(EX.dateStr())+', '+EX.dateStr():'Roll as many times as you like';showStats()}
+document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+$('#roll').onclick=doRoll;$('#skip').onclick=()=>{skip=true};
+const sb=$('#snd');sb.textContent=muted?'\uD83D\uDD07 off':'\uD83D\uDD0A on';sb.onclick=()=>{muted=!muted;sb.textContent=muted?'\uD83D\uDD07 off':'\uD83D\uDD0A on';try{localStorage.setItem('exprdle:mute',muted?'1':'0')}catch(e){}if(!muted){SFX.unlock();SFX.badge(2)}};
+const sp=$('#spd');sp.value=String(speed);sp.onchange=()=>{speed=+sp.value;try{localStorage.setItem('exprdle:spd',speed)}catch(e){}};
+$('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(cur&&cur._share||'');$('#copy').textContent='Copied!'}catch(e){$('#copy').textContent='Copy failed'}setTimeout(()=>$('#copy').textContent='Copy result',1500)};
+$('#nbad').textContent=Object.keys(EX.LAB).length;
+setMode('daily');$('#roll').disabled=true;$('#roll').textContent='Calibrating odds\u2026';
+EX.calibrate(()=>{ready=true;setMode(mode);$('#roll').disabled=false});
+})();
+</script></body></html>
