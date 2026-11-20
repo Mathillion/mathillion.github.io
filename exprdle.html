@@ -189,6 +189,10 @@ code, .code { font-family: var(--f-mono); font-size: 13px; background: var(--lin
 .chip.tier{padding:5px 12px 5px 10px}
 .line{display:grid;grid-template-columns:90px 1fr;gap:6px 12px;align-items:baseline;padding:6px 0}.line dt{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-family:var(--f-mono)}
 .line dd{margin:0;font-family:var(--f-mono);overflow-wrap:anywhere}
+.ixl{display:flex;flex-direction:column;max-height:420px;overflow:auto;margin-top:6px}
+.ix{display:grid;grid-template-columns:54px 1fr auto 46px;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line-2);font-family:var(--f-mono);font-size:12px}
+.ix:first-child{border-top:0}.ix .rk{color:var(--ink-2)}.ix .tier{justify-self:start}.ix .cn{text-align:right;color:var(--ink-2)}
+.ix.lock{opacity:.4;filter:grayscale(1)}
 </style></head><body><div class="wrap" id="app">
 <header class="mast"><div class="brand" onclick="window.location.href = 'https://mathillion.github.io'">Expr<b>dle</b></div><div class="right"><select id="spd" class="mute" aria-label="Animation speed"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select><button id="snd" class="mute"></button></div></header>
 <div class="seg" role="tablist"><button data-m="daily" class="on">Daily</button><button data-m="unl">Unlimited</button></div>
@@ -199,7 +203,8 @@ code, .code { font-family: var(--f-mono); font-size: 13px; background: var(--lin
 <section class="card" id="res" hidden><dl class="line" style="margin:0"><dt>Rolled</dt><dd id="orig"></dd><dt>Simplified</dt><dd id="simp"></dd><dt>Answer</dt><dd id="ans"></dd></dl></section>
 <div class="feed" id="feed"></div>
 <div class="row" id="after" hidden><button class="btn sm" id="copy">Copy result</button></div>
-<details><summary>Before you begin</summary><div class="small muted" style="padding-top:8px;line-height:1.6">Each expression has a minimum of 2 numbers separated by an operator, with a 1 in 4 chance to keep adding a number and an operator. This repeats until it fails. Additionally, each number has a 1 in 7 chance to become negative. Each number also has a 1 in 7 chance to gain a decimal digit, with each extra decimal digit being another 1 in 3 (also repeats until fail). Basic operators are more common, while more complicated operators are much rarer. + − × ÷ ^ are common, sin/cos/tan are rare, ∫ and d/dx are the rarest of them all. Calculus terms are evaluated exactly, and it even uses the same simplifier and evaluator as Mathillion! Pretty cool, right? There are currently <b id="nbad"></b> badges, and each one is worth <b>100 / p</b> Mag, which for now <b>p</b> is based on the simulation of a few thousand rolls, all calculated before you even hit the Roll button.</div></details>
+<details id="idx"><summary>Badge index <span class="muted" id="idxn"></span></summary><div class="ixl" id="ixl"></div></details>
+<details><summary>Before you begin</summary><div class="small muted" style="padding-top:8px;line-height:1.6">Each expression has a minimum of 2 numbers separated by an operator, with a 1 in 4 chance to keep adding a number and an operator. This repeats until it fails. Additionally, each number has a 1 in 5 chance to become negative. Each number also has a 1 in 4.5 chance to gain a decimal digit, with each extra decimal digit being another 1 in 2.5 (also repeats until fail). Basic operators are more common, while more complicated operators are much rarer. + − × ÷ ^ are common, sin/cos/tan and atan/sinh/cosh/tanh are less common, ∫ and d/dx show up in lots of different forms. Calculus terms are evaluated exactly, and it even uses the same simplifier and evaluator as Mathillion! Pretty cool, right? There are currently <b id="nbad"></b> badges, and each one is worth <b>100 / p</b> Mag, which for now <b>p</b> is based on the simulation of a few thousand rolls, mixed with exact math for the ultra-rare ones (down to about 1 in 100 million), all calculated before you even hit the Roll button.</div></details>
 </div>
 <script>
 function makeCore(){
@@ -872,35 +877,36 @@ function rngFrom(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=
 const dateStr=()=>new Date().toISOString().slice(0,10);
 const dayNo=d=>Math.max(1,Math.round((Date.parse(d+'T00:00:00Z')-EPOCH)/864e5)+1);
 /* ---- generation ---- */
-const OPS=[['+',30],['-',26],['*',20],['/',12],['^',7],['sin',4],['cos',4],['tan',2.5],['int',2.5],['der',2.5]], BIN=OPS.slice(0,5);
+const OPS=[['+',30],['-',26],['*',20],['/',12],['^',7],['sin',6],['cos',6],['tan',4],['atan',2],['sinh',1.5],['cosh',1.5],['tanh',1.5],['int',5],['der',5]], BIN=OPS.slice(0,5);
+const TRIG=['sin','cos','tan','atan','sinh','cosh','tanh'], TRIG3=['sin','cos','tan'], TW=OPS.reduce((a,o)=>a+o[1],0);
 const pick=(r,l)=>{let t=l.reduce((a,b)=>a+b[1],0)*r();for(const o of l)if((t-=o[1])<0)return o[0];return l[0][0]};
 const MEMES={69:'nice',420:'blaze it',67:'six seven',42:'the answer',666:'devilish',777:'jackpot',911:'never forget',1337:'leet',404:'not found',8008:'classic',80085:'classic x10',69420:'the combo',1234:'one two three four',12345:'staircase',9001:'over 9000',31337:'elite',123:'easy as',360:'no scope',187:'187',314:'pi digits',2718:'e digits',1618:'phi digits',1414:'root-2 digits',1732:'root-3 digits'};
 const POOL=[69,420,67,42,666,777,911,1337,404,8008,80085,69420,1234,12345,9001,31337,123,360,187];
 const ACROSS=[...Object.keys(MEMES),'3141','31415','27182','16180','90210','2468','1111','2222','3333','7777'];
 const HID=[69,420,666,1337,911,777,404,67,42];
 const mkN=(ip,fp,neg)=>{const v=+(ip+(fp?'.'+fp:''));neg=neg&&v!==0;return{ip,fp,neg,dec:fp.length,v,s:(neg?'-':'')+ip+(fp?'.'+fp:'')}};
-function genNum(r){
+function genNum(r,f){
   const x=r();let n;
   if(x<.45)n=1+(r()*10|0);else if(x<.70)n=11+(r()*40|0);else if(x<.83)n=51+(r()*150|0);else if(x<.91)n=201+(r()*799|0);else if(x<.95)n=1000+(r()*9000|0);else if(x<.98)n=POOL[r()*POOL.length|0];else n=0;
-  let fp='';if(r()<1/7){fp+=r()*10|0;while(r()<1/3)fp+=r()*10|0}
-  return mkN(String(n),fp,r()<1/7);
+  let fp='';if(f||r()<1/4.5){fp+=r()*10|0;while(r()<1/2.5)fp+=r()*10|0}
+  return mkN(String(n),fp,r()<1/5);
 }
 const D=x=>x.s.replace('-','\u2212'),Q=x=>x.neg?'('+x.s+')':x.s;
 const t2=h=>h.replace(/<sup>(.*?)<\/sup>/g,'^$1').replace(/<sub>(.*?)<\/sub>/g,'_$1').replace(/<[^>]+>/g,'');
-const IF=[['p0',2],['p1',3],['p2',3],['p3',2],['p4',1],['sin',2],['cos',2],['exp',2],['inv',1.5]];
-const DF=[['p1',1.5],['p2',3],['p3',2],['p4',1],['p5',1],['sin',2],['cos',2],['exp',2],['ln',1.5],['tan',1],['xex',1],['xsin',1],['sin2',1]];
-const FNAME={p0:'a constant',p1:'x',p2:'x\u00B2',p3:'x\u00B3',p4:'x\u2074',p5:'x\u2075',sin:'sin x',cos:'cos x',exp:'e\u02E3',inv:'1/x',ln:'ln x',tan:'tan x',xex:'x\u00B7e\u02E3',xsin:'x\u00B7sin x',sin2:'sin\u00B2 x'};
+const IF=[['p0',2],['p1',3],['p2',3],['p3',2],['p4',1],['p5',.5],['sin',2],['cos',2],['exp',2],['inv',1.5],['tan',1],['xex',1],['lnx',1],['sin2',1],['cos2',1],['rat',1]];
+const DF=[['p1',1.5],['p2',3],['p3',2],['p4',1],['p5',1],['sin',2],['cos',2],['exp',2],['ln',1.5],['tan',1],['xex',1],['xsin',1],['sin2',1],['cos2',1],['atan',1],['sinh',1],['cosh',1],['xln',1],['sqrt',1]];
+const FNAME={p0:'a constant',p1:'x',p2:'x\u00B2',p3:'x\u00B3',p4:'x\u2074',p5:'x\u2075',sin:'sin x',cos:'cos x',exp:'e\u02E3',inv:'1/x',ln:'ln x',tan:'tan x',xex:'x\u00B7e\u02E3',xsin:'x\u00B7sin x',sin2:'sin\u00B2 x',lnx:'ln x',cos2:'cos\u00B2 x',rat:'1/(1+x\u00B2)',atan:'atan x',sinh:'sinh x',cosh:'cosh x',xln:'x\u00B7ln x',sqrt:'\u221Ax'};
 function calc(r,k){
   const form=pick(r,k==='int'?IF:DF),A=genNum(r),B=k==='int'?genNum(r):null,poly=/^p\d/.test(form),n=poly?+form[1]:0;
   const c=(poly&&n===0)||r()<.4?genNum(r):null,cs=c?Q(c):'1',ch=c?D(c):'',a=Q(A),b=B&&Q(B);
   const sup=n==1?'':'<sup>'+n+'</sup>';
-  const FH={sin:'sin x',cos:'cos x',exp:'e<sup>x</sup>',ln:'ln x',tan:'tan x',xex:'x\u00B7e<sup>x</sup>',xsin:'x\u00B7sin x',sin2:'sin<sup>2</sup> x'};
-  const ig=poly?ch+(n?'x'+sup:''):form==='inv'?(c?ch+'/x':'1/x'):(c?ch+' ':'')+FH[form];
+  const FH={sin:'sin x',cos:'cos x',exp:'e<sup>x</sup>',ln:'ln x',tan:'tan x',xex:'x\u00B7e<sup>x</sup>',xsin:'x\u00B7sin x',sin2:'sin<sup>2</sup> x',lnx:'ln x',cos2:'cos<sup>2</sup> x',atan:'atan x',sinh:'sinh x',cosh:'cosh x',xln:'x\u00B7ln x',sqrt:'\u221Ax'};
+  const ig=poly?ch+(n?'x'+sup:''):form==='inv'?(c?ch+'/x':'1/x'):form==='rat'?(c?ch:'1')+'/(1+x<sup>2</sup>)':(c?ch+' ':'')+FH[form];
   let s;
   if(k==='int'){
-    s={p:`(${cs}*(${b}^${n+1}-${a}^${n+1})/${n+1})`,sin:`(${cs}*(cos(${a})-cos(${b})))`,cos:`(${cs}*(sin(${b})-sin(${a})))`,exp:`(${cs}*(e^(${b})-e^(${a})))`,inv:`(${cs}*(ln(${b})-ln(${a})))`}[poly?'p':form];
+    s={p:`(${cs}*(${b}^${n+1}-${a}^${n+1})/${n+1})`,sin:`(${cs}*(cos(${a})-cos(${b})))`,cos:`(${cs}*(sin(${b})-sin(${a})))`,exp:`(${cs}*(e^(${b})-e^(${a})))`,inv:`(${cs}*(ln(${b})-ln(${a})))`,tan:`(${cs}*(ln(cos(${a}))-ln(cos(${b}))))`,xex:`(${cs}*((${b}-1)*e^(${b})-(${a}-1)*e^(${a})))`,lnx:`(${cs}*(${b}*ln(${b})-${b}-${a}*ln(${a})+${a}))`,sin2:`(${cs}*((${b}-${a})/2-(sin(2*${b})-sin(2*${a}))/4))`,cos2:`(${cs}*((${b}-${a})/2+(sin(2*${b})-sin(2*${a}))/4))`,rat:`(${cs}*(atan(${b})-atan(${a})))`}[poly?'p':form];
   }else{
-    s={p:`(${cs}*${n}*${a}^${n-1})`,sin:`(${cs}*cos(${a}))`,cos:`(-${cs}*sin(${a}))`,exp:`(${cs}*e^(${a}))`,ln:`(${cs}/${a})`,tan:`(${cs}/cos(${a})^2)`,xex:`(${cs}*(e^(${a})+${a}*e^(${a})))`,xsin:`(${cs}*(sin(${a})+${a}*cos(${a})))`,sin2:`(${cs}*2*sin(${a})*cos(${a}))`}[poly?'p':form];
+    s={p:`(${cs}*${n}*${a}^${n-1})`,sin:`(${cs}*cos(${a}))`,cos:`(-${cs}*sin(${a}))`,exp:`(${cs}*e^(${a}))`,ln:`(${cs}/${a})`,tan:`(${cs}/cos(${a})^2)`,xex:`(${cs}*(e^(${a})+${a}*e^(${a})))`,xsin:`(${cs}*(sin(${a})+${a}*cos(${a})))`,sin2:`(${cs}*2*sin(${a})*cos(${a}))`,cos2:`(-${cs}*2*sin(${a})*cos(${a}))`,atan:`(${cs}/(1+${a}^2))`,sinh:`(${cs}*cosh(${a}))`,cosh:`(${cs}*sinh(${a}))`,xln:`(${cs}*(ln(${a})+1))`,sqrt:`(${cs}/(2*sqrt(${a})))`}[poly?'p':form];
   }
   const html=k==='int'?`<span class="cal">\u222B<sup>${D(B)}</sup><sub>${D(A)}</sub></span> ${ig} dx`:`<span class="cal">d/dx</span>[${ig}]<sub>x=${D(A)}</sub>`;
   return{kind:k,form,nums:k==='int'?[A,B,...(c?[c]:[])]:[...(c?[c]:[]),A],src:s,html};
@@ -912,7 +918,7 @@ function genTerm(r,k){
   else if(k==='int'||k==='der')t=calc(r,k);
   else{
     let src,html,nums=[],special=false;
-    if(r()<.2){const kk=1+(r()*12|0),m=[1,2,3,4,6][r()*5|0];special=true;html=(kk==1?'':kk)+'\u03C0'+(m>1?'/'+m:'');src=`(${kk}*pi/${m})`}
+    if(TRIG3.includes(k)&&r()<.2){const kk=1+(r()*12|0),m=[1,2,3,4,6][r()*5|0];special=true;html=(kk==1?'':kk)+'\u03C0'+(m>1?'/'+m:'');src=`(${kk}*pi/${m})`}
     else{const x=genNum(r);nums=[x];html=D(x);src=Q(x)}
     t={kind:k,nums,special,src:`${k}(${src})`,html:`${k}(${html})`};
   }
@@ -965,7 +971,7 @@ function numProps(x){
     if(MEMES[n]){o.push('m'+n);if(neg)o.push('nmeme')}
     for(const m of HID)if(ds(n).includes(m)&&n!==m)o.push('h'+m);
   }else{
-    o.push('d1');if(fp.length>=2)o.push('d2');if(fp.length>=3)o.push('d3');if(fp.length>=5)o.push('d5');
+    o.push('d1');if(fp.length>=2)o.push('d2');if(fp.length>=3)o.push('d3');if(fp.length>=5)o.push('d5');if(fp.length>=6)o.push('d6');if(fp.length>=7)o.push('d7');if(fp.length>=8)o.push('d8');if(fp.length>=9)o.push('d9');
     if(/0$/.test(fp))o.push('t0');if(ip==='0')o.push('sub');
     const dg=ip+fp,idx=ip.length;let best=null;
     for(const m of ACROSS){let i=dg.indexOf(m);while(i>=0){if(i<idx&&i+m.length>idx&&(!best||m.length>best.length))best=m;i=dg.indexOf(m,i+1)}}
@@ -984,8 +990,43 @@ Object.assign(LAB,{
 'R:mono':'Monotone','R:uniq':'All unique ops','R:arith':'Full arithmetic','R:tower':'Tower','R:dblneg':'Double negative','R:negsq':'Neg even power','R:twins':'Twins','R:trip':'Triplets','R:mirror':'Mirror','R:up':'Stairs up','R:down':'Stairs down','R:trig2':'Trig combo','R:ftrig':'Full trig','R:duet':'Duet','R:calc2':'Calc \u00D72','R:tiny':'All tiny','R:spread':'Huge spread','R:alldec':'All decimals','R:allneg':'All negative','R:big':'5-digit',
 'S:single':'Single value','S:irred':'Irreducible','S:half':'Halved','S:fifth':'Fifth','S:grew':'Grew','S:frac':'Fraction','S:zero':'Zero-sum','S:one':'Unity','S:pi':'Has \u03C0','S:e':'Has e','S:trig':'Has trig','S:ln':'Has ln','S:pow':'Has power','S:sqrt':'Has \u221A','S:abs':'Has abs','S:x5':'Complexity 5+','S:x10':'Complexity 10+','S:x20':'Complexity 20+',
 'A:int':'Integer','A:nint':'Non-integer','A:h6':'>1M','A:h9':'>1B','A:h12':'>1T','A:h18':'>1Qi','A:t3':'<0.001','A:t6':'<1e-6','A:almost':'Near-integer','A:echo':'Echo','A:npi':'\u2248 \u03C0','A:ne':'\u2248 e','A:nphi':'\u2248 \u03C6','A:rdec':'Repeating decimal','A:irr':'Irrational'});
-for(const f in FNAME){LAB['F:int:'+f]='\u222B '+FNAME[f];LAB['F:der:'+f]='d/dx '+FNAME[f]}
+IF.forEach(([f])=>LAB['F:int:'+f]='\u222B '+FNAME[f]);DF.forEach(([f])=>LAB['F:der:'+f]='d/dx '+FNAME[f]);Object.assign(LAB,{'k:atan':'Arctangent','k:sinh':'Sinh','k:cosh':'Cosh','k:tanh':'Tanh'});
 Object.keys(LAB).filter(k=>k[0]==='n').forEach(k=>LAB['A:'+k.slice(2)]='Ans: '+LAB[k]);
+/* ---- analytic odds and ultra-rare badges ---- */
+const AN={'n:ndec':1/22.5,'n:t0':1/45,'n:sub':1/225};
+for(let k=6;k<=8;k++){AN['n:d'+k]=Math.pow(1/2.5,k-1)/4.5;LAB['n:d'+k]=k+' decimals'}
+AN['n:d9']=Math.pow(1/2.5,8)*(3/5)/4.5;LAB['n:d9']='9 decimals';
+const PN=n=>n<2?0:.75*Math.pow(.25,n-2),tail=(K,f)=>{let t=0;for(let n=K;n<=80;n++)t+=PN(n)*f(n);return t};
+const bin=(n,k,q)=>{let c=1;for(let i=0;i<k;i++)c=c*(n-i)/(i+1);return c*Math.pow(q,k)*Math.pow(1-q,n-k)};
+const wOf=k=>OPS.find(o=>o[0]===k)[1];
+const QC=(wOf('int')+wOf('der'))/TW,QT=OPS.filter(o=>TRIG.includes(o[0])).reduce((a,o)=>a+o[1],0)/TW,QF=QC+QT;
+const BS=BIN.reduce((a,o)=>a+o[1],0),same=m=>BIN.reduce((a,o)=>a+Math.pow(o[1]/BS,m),0);
+const cntP=(q,K,last)=>tail(Math.max(2,K),n=>{if(!last)return bin(n,K,q);let t=0;for(let k=K;k<=n;k++)t+=bin(n,k,q);return t});
+const reg=(id,label,p)=>{LAB[id]=label;AN[id]=p};
+for(let n=7;n<=15;n++)reg('R:c'+n,n<15?'Chain of '+n:'Chain of 15+',n<15?PN(n):tail(15,()=>1));
+for(let K=4;K<=8;K++)reg('R:fn'+K,K<8?K+' functions':'8+ functions',cntP(QF,K,K===8));
+for(let K=3;K<=5;K++)reg('R:cx'+K,K<5?K+' calculus':'5+ calculus',cntP(QC,K,K===5));
+for(let K=3;K<=7;K++)reg('R:tg'+K,K<7?K+' trig':'7+ trig',cntP(QT,K,K===7));
+const allP=(q,n,last)=>last?tail(n,m=>Math.pow(q,m)):PN(n)*Math.pow(q,n);
+for(let n=3;n<=7;n++)reg('R:allfn'+n,n<7?'All '+n+' functions':'All 7+ functions',allP(QF,n,n===7));
+for(let n=2;n<=5;n++)reg('R:allcx'+n,n<5?'All '+n+' calculus':'All 5+ calculus',allP(QC,n,n===5));
+for(let n=3;n<=6;n++)reg('R:alltg'+n,n<6?'All '+n+' trig':'All 6+ trig',allP(QT,n,n===6));
+for(let n=5;n<=8;n++)reg('R:one'+n,n<8?'Same op ×'+(n-1):'Same op ×7+',n<8?PN(n)*same(n-1):tail(8,m=>same(m-1)));
+reg('R:pw4','Power chain 4',PN(4)*Math.pow(7/BS,3));
+reg('R:pw5','Power chain 5+',tail(5,m=>Math.pow(7/BS,m-1)));
+for(const o of OPS.slice(5))AN['k:'+o[0]]=o[1]/TW;
+{const si=IF.reduce((a,x)=>a+x[1],0),sd=DF.reduce((a,x)=>a+x[1],0);IF.forEach(([f,w])=>AN['F:int:'+f]=w/si);DF.forEach(([f,w])=>AN['F:der:'+f]=w/sd)}
+function intOdds(){
+  const mass=new Map(),add=(n,p)=>mass.set(n,(mass.get(n)||0)+p),span=(lo,hi,p)=>{for(let n=lo;n<=hi;n++)add(n,p/(hi-lo+1))};
+  span(1,10,.45);span(11,50,.25);span(51,200,.13);span(201,999,.08);span(1000,9999,.04);POOL.forEach(n=>add(n,.03/POOL.length));add(0,.02);
+  const out={};
+  for(const [n,p] of mass){
+    const q=p*7/9;
+    for(const id of numProps({ip:String(n),fp:'',neg:false,v:n,dec:0}))out['n:'+id]=(out['n:'+id]||0)+q;
+    if(MEMES[n])out['n:nmeme']=(out['n:nmeme']||0)+p*7/45;
+  }
+  return out;
+}
 const denOf=id=>{const c=id[0];return c==='n'?'num':c==='o'?'op':c==='k'?'term':c==='T'?'trig':c==='C'?'calc':c==='F'?id.slice(2,5).replace(':',''):'roll'};
 const fmtV=(v,a)=>{if(a&&a.num&&a.num.d===1)return String(a.num.n);if(Number.isInteger(v)&&Math.abs(v)<1e15)return String(v);const av=Math.abs(v);if(av>=1e15||(av>0&&av<1e-6))return v.toExponential(8).replace(/\.?0+e/,'e');return String(+v.toPrecision(12))};
 function ansInfo(v,a){
@@ -1006,7 +1047,7 @@ function badgesFor(R){
     G.push({k:'term',i,ids});
   });
   const st=[],nm=R.nums,pl=i=>T[i].kind==='num';
-  st.push(n===2?'R:c2':'R:c'+Math.min(n,7));
+  st.push(n===2?'R:c2':'R:c'+Math.min(n,15));
   if(n>=3&&new Set(O).size===1)st.push('R:mono');
   if(n>=3&&new Set(O).size===O.length)st.push('R:uniq');
   if(['+','-','*','/'].every(o=>O.includes(o)))st.push('R:arith');
@@ -1026,6 +1067,15 @@ function badgesFor(R){
   const nz=nm.filter(x=>x.v>0).map(x=>x.v);if(nz.length>1&&Math.max(...nz)/Math.min(...nz)>=1000)st.push('R:spread');
   if(nm.length>=2&&nm.every(x=>x.fp))st.push('R:alldec');if(nm.length>=2&&nm.every(x=>x.neg))st.push('R:allneg');
   if(nm.some(x=>x.v>=10000))st.push('R:big');
+  const nC=K.filter(k=>k==='int'||k==='der').length,nT=K.filter(k=>TRIG.includes(k)).length,nF=nC+nT;
+  if(nF>=4)st.push('R:fn'+Math.min(nF,8));
+  if(nC>=3)st.push('R:cx'+Math.min(nC,5));
+  if(nT>=3)st.push('R:tg'+Math.min(nT,7));
+  if(nF===n&&n>=3)st.push('R:allfn'+Math.min(n,7));
+  if(nC===n&&n>=2)st.push('R:allcx'+Math.min(n,5));
+  if(nT===n&&n>=3)st.push('R:alltg'+Math.min(n,6));
+  if(n>=5&&new Set(O).size===1)st.push('R:one'+Math.min(n,8));
+  if(n>=4&&O.every(o=>o==='^'))st.push('R:pw'+Math.min(n,5));
   G.push({k:'roll',ids:st});
   const s=[],f=a.f,L=a.text.length,ol=R.disp.length;
   if(a.num)s.push('S:single');if(a.same)s.push('S:irred');if(L*2<=ol)s.push('S:half');if(L*5<=ol)s.push('S:fifth');if(L>ol)s.push('S:grew');
@@ -1033,12 +1083,12 @@ function badgesFor(R){
   if(f.c.pi)s.push('S:pi');if(f.c.e)s.push('S:e');if(f.fn.sin||f.fn.cos||f.fn.tan)s.push('S:trig');if(f.fn.ln)s.push('S:ln');if(f.pow)s.push('S:pow');if(f.root)s.push('S:sqrt');if(f.fn.abs)s.push('S:abs');
   if(a.cost>=5)s.push('S:x5');if(a.cost>=10)s.push('S:x10');if(a.cost>=20)s.push('S:x20');
   for(const t of T){
-    if(t.kind==='sin'||t.kind==='cos'||t.kind==='tan'){if(t.a.num)s.push('T:col')}
+    if(TRIG.includes(t.kind)){if(t.a.num)s.push('T:col')}
     else if(t.a){const q=t.a;if(q.num&&q.num.d===1)s.push('C:int');if(q.v<0)s.push('C:neg');if(q.v===0)s.push('C:zero');if(!q.num)s.push('C:irr')}
   }
   G.push({k:'simp',ids:s});
   const v=a.v,av=Math.abs(v),A=[];
-  numProps(ansInfo(v,a)).forEach(p=>A.push('A:'+p));
+  numProps(ansInfo(v,a)).forEach(p=>{if(('A:'+p) in LAB)A.push('A:'+p)});
   A.push(Number.isInteger(v)?'A:int':'A:nint');
   [[1e6,'h6'],[1e9,'h9'],[1e12,'h12'],[1e18,'h18']].forEach(x=>{if(av>=x[0])A.push('A:'+x[1])});
   if(av>0&&av<1e-3)A.push('A:t3');if(av>0&&av<1e-6)A.push('A:t6');
@@ -1051,11 +1101,12 @@ function badgesFor(R){
   return G;
 }
 /* ---- odds calibration ---- */
-const P0={'n:neg':1/7,'n:d1':1/7,'n:d2':1/21,'n:d3':1/63,'n:d5':1/567,'R:c2':.75,'R:c3':3/16,'R:c4':3/64,'R:c5':3/256,'R:c6':3/1024,'R:c7':1/1024,'o:+':30/95,'o:-':26/95,'o:*':20/95,'o:/':12/95,'o:^':7/95,'k:sin':4/110.5,'k:cos':4/110.5,'k:tan':2.5/110.5,'k:int':2.5/110.5,'k:der':2.5/110.5};
+const P0={'n:neg':1/5,'n:d1':1/4.5,'n:d2':1/11.25,'n:d3':1/28.125,'n:d5':1/175.78125,'R:c2':.75,'R:c3':3/16,'R:c4':3/64,'R:c5':3/256,'R:c6':3/1024,'R:c7':1/1024,'o:+':30/95,'o:-':26/95,'o:*':20/95,'o:/':12/95,'o:^':7/95,'k:sin':4/110.5,'k:cos':4/110.5,'k:tan':2.5/110.5,'k:int':2.5/110.5,'k:der':2.5/110.5};
 let PROB={},TOT=[],THR=[];
 const BOUNDS=[.4,.15,.05,.01,.002,2e-4,2e-5];
-function calibrate(done,N=10000){
-  const cnt={},den={num:0,op:0,term:0,int:0,der:0,trig:0,calc:0,roll:0},tot=[],r=rngFrom(hashStr('exprdle:calib'));let i=0;
+function calibrate(done,N=8000,S=100000){
+  const cnt={},den={num:0,op:0,term:0,int:0,der:0,trig:0,calc:0,roll:0},tot=[],dc={},r=rngFrom(hashStr('exprdle:calib')),rd=rngFrom(hashStr('exprdle:calib3'));let i=0,j=0;
+  const INT=intOdds();
   (function chunk(){
     for(let k=0;k<100&&i<N;k++,i++){
       const R=genRoll(r);
@@ -1064,15 +1115,25 @@ function calibrate(done,N=10000){
       for(const g of badgesFor(R))for(const id of g.ids)cnt[id]=(cnt[id]||0)+1;
     }
     if(i<N)return setTimeout(chunk);
-    for(const id in LAB)PROB[id]=P0[id]??Math.min(.97,Math.max(Math.max(cnt[id]||0,.5)/den[denOf(id)],1/60000));
-    // totals measured with final odds
-    const r2=rngFrom(hashStr('exprdle:calib2'));
-    for(let j=0;j<1500;j++){const R=genRoll(r2);let s=0;for(const g of badgesFor(R))for(const id of g.ids)s+=100/PROB[id];tot.push(s)}
-    tot.sort((a,b)=>a-b);TOT=tot;THR=BOUNDS.map(b=>tot[Math.min(tot.length-1,Math.floor(tot.length*(1-b)))]);
-    done();
+    setTimeout(dchunk);
   })();
+  function dchunk(){
+    for(let k=0;k<2000&&j<S;k++,j++)for(const p of numProps(genNum(rd,true)))dc['n:'+p]=(dc['n:'+p]||0)+1;
+    if(j<S)return setTimeout(dchunk);
+    const fixed=Object.assign({},P0,AN);
+    for(const id in LAB){
+      let p=fixed[id];
+      if(p==null&&id[0]==='n')p=INT[id]??(dc[id]||.5)/S/4.5;
+      if(p==null)p=Math.min(.97,Math.max(Math.max(cnt[id]||0,.5)/den[denOf(id)],1/60000));
+      PROB[id]=p;
+    }
+    const r2=rngFrom(hashStr('exprdle:calib2'));
+    for(let q=0;q<1200;q++){const R=genRoll(r2);let t=0;for(const g of badgesFor(R))for(const id of g.ids)t+=100/PROB[id];tot.push(t)}
+    tot.sort((x,y)=>x-y);TOT=tot;THR=BOUNDS.map(bd=>tot[Math.min(tot.length-1,Math.floor(tot.length*(1-bd)))]);
+    done();
+  }
 }
-const inst=id=>{const p=PROB[id]||1/1000,ip=1/p;return{id,label:LAB[id]||id,p,inv:ip,mag:100/p,tier:ip<2.5?0:ip<7?1:ip<30?2:ip<150?3:ip<1000?4:ip<8000?5:ip<50000?6:7}};
+const inst=id=>{const p=PROB[id]||1/1000,ip=1/p;return{id,label:LAB[id]||id,p,inv:ip,mag:100/p,tier:ip<2.5?0:ip<7?1:ip<30?2:ip<150?3:ip<1000?4:ip<10000?5:ip<1e6?6:7}};
 const totTier=m=>{let i=0;while(i<THR.length&&m>=THR[i])i++;return Math.min(i,7)};
 const pctile=m=>{let lo=0,hi=TOT.length;while(lo<hi){const mid=(lo+hi)>>1;if(TOT[mid]<m)lo=mid+1;else hi=mid}return lo/TOT.length};
 const fmtMag=m=>Math.floor(m).toLocaleString();
@@ -1111,13 +1172,23 @@ const TN=['common','uncommon','rare','obscure','legendary','mythic','unheard','u
 const wait=ms=>skip?Promise.resolve():new Promise(r=>setTimeout(r,ms/speed));
 const el=(tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e};
 const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+let found=rd('exprdle:found')||{};
+const fmtOdds=v=>v<10?v.toFixed(1):Math.round(v).toLocaleString('en-US');
+function markFound(id){const f=found[id]||(found[id]={n:0});f.n++;wr('exprdle:found',found)}
+function renderIndex(){
+  if(!ready)return;
+  const all=Object.keys(EX.LAB).map(id=>EX.inst(id)).sort((a,b)=>a.p-b.p||a.label.localeCompare(b.label));
+  const got=all.filter(i=>found[i.id]).length;
+  $('#idxn').textContent='('+got+' / '+all.length+' found)';
+  $('#ixl').innerHTML=all.map((i,k)=>found[i.id]?`<div class="ix"><span class="rk">#${k+1}</span><span class="tier" data-t="${i.tier}">${esc(i.label)}</span><span class="od">1 in ${fmtOdds(i.inv)}</span><span class="cn">×${found[i.id].n}</span></div>`:`<div class="ix lock"><span class="rk">#${k+1}</span><span class="tier">???</span><span class="od">???</span><span class="cn"></span></div>`).join('');
+}
 let mag=0,shown=0,counter=0;
 function setMag(to){mag=to;cancelAnimationFrame(counter);const from=shown,t0=performance.now();(function f(now){const k=skip?1:Math.min(1,(now-t0)/(350/speed));shown=from+(mag-from)*(1-Math.pow(1-k,3));$('#mag').textContent=EX.fmtMag(shown);if(k<1)counter=requestAnimationFrame(f)})(t0)}
 function sound(id,i){ if(id==='n:neg'||id==='A:neg')return SFX.neg(); if(/^[nA]:(d\d|t0|sub)$/.test(id))return SFX.dec(+((id.match(/\d/)||[2])[0])); if(/^[nA]:(m|x|h|mm)/.test(id)&&!/^[nA]:(mers|mm$)/.test(id)&&/^[nA]:[mxh]\d/.test(id))return SFX.meme(); SFX.badge(i.tier) }
 async function chip(id,tk){
   const i=EX.inst(id),c=el('span','chip tier pop');c.dataset.t=i.tier;
   c.innerHTML=`<b>${esc(i.label)}</b><i>1 in ${i.inv<10?i.inv.toFixed(1):Math.round(i.inv).toLocaleString('en-US')}</i><em>+${EX.fmtMag(i.mag)}</em>`;
-  $('#feed').prepend(c);sound(id,i);setMag(mag+i.mag);if(i.tier>=1)shake(i.tier);
+  $('#feed').prepend(c);markFound(id);sound(id,i);setMag(mag+i.mag);if(i.tier>=1)shake(i.tier);
   if(i.tier>=4){const r=c.getBoundingClientRect();Conf.fire(i.tier,r.left+r.width/2,r.top)}
   await wait(260+i.tier*110);return i;
 }
@@ -1145,7 +1216,7 @@ async function play(R,label){
   SFX.total(tt);shake(Math.min(7,tt+2));Conf.fire(tt,innerWidth/2,innerHeight/2);
   $('#tot').innerHTML=`<span class="tier big pop" data-t="${tt}">${TN[tt]}</span> <span class="muted small">better than ${(pc*100).toFixed(pc>.99?2:0)}% of rolls. earns ${G.reduce((a,g)=>a+g.ids.length,0)} badges.</span>`;
   setMag(total);$('#skip').hidden=true;$('#roll').disabled=false;$('#after').hidden=false;
-  const st=rd('exprdle:stats')||{rolls:0,best:0};st.rolls++;if(total>st.best)st.best=total;wr('exprdle:stats',st);showStats();
+  const st=rd('exprdle:stats')||{rolls:0,best:0};st.rolls++;if(total>st.best)st.best=total;wr('exprdle:stats',st);showStats();renderIndex();
   if(mode==='daily'){const k='exprdle:d:'+EX.dateStr();const o=rd(k);if(!o||total>o.mag)wr(k,{mag:total})}
   const badgeCount = G.reduce((a,g)=>a+g.ids.length,0);
   const topPct = (1-pc)*100;
@@ -1171,6 +1242,6 @@ const sp=$('#spd');sp.value=String(speed);sp.onchange=()=>{speed=+sp.value;try{l
 $('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(cur&&cur._share||'');$('#copy').textContent='Copied!'}catch(e){$('#copy').textContent='Copy failed'}setTimeout(()=>$('#copy').textContent='Copy result',1500)};
 $('#nbad').textContent=Object.keys(EX.LAB).length;
 setMode('daily');$('#roll').disabled=true;$('#roll').textContent='Calibrating odds\u2026';
-EX.calibrate(()=>{ready=true;setMode(mode);$('#roll').disabled=false});
+EX.calibrate(()=>{ready=true;setMode(mode);$('#roll').disabled=false;renderIndex()});
 })();
 </script></body></html>
