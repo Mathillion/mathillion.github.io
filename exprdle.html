@@ -1147,7 +1147,8 @@ let cur=null;
 function doRoll(){
   if(!ready)return;SFX.unlock();
   let R,label;
-  if(mode==='daily'){const d=EX.dateStr();R=EX.genRoll(EX.rngFrom(EX.hashStr('exprdle:'+d)));label='Daily #'+EX.dayNo(d)}
+  if(!localStorage.getItem("id"))localStorage.setItem("id",crypto.randomUUID());
+  if(mode==='daily'){const d=EX.dateStr();R=EX.genRoll(EX.rngFrom(EX.hashStr('exprdle:'+d+localStorage.getItem("id"))));label='Daily #'+EX.dayNo(d)}
   else{R=EX.genRoll(Math.random);label='Unlimited'}
   cur=R;play(R,label);
 }
